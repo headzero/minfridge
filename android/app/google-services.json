@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "399319584583",
+    "firebase_url": "https://minfridge-headzero-e421d-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "minfridge-headzero-e421d",
+    "storage_bucket": "minfridge-headzero-e421d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:399319584583:android:ce9bb224e63487fe060662",
+        "android_client_info": {
+          "package_name": "com.example.minfridge"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBdGYgxfgN_lc032w60kvdRWd1PpwUPp8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

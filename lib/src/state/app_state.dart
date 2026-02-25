@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 
+import '../models/app_state_snapshot.dart';
 import '../models/food_item.dart';
 import '../models/fridge.dart';
 import '../models/recommendation.dart';
@@ -30,8 +31,10 @@ class AppState extends ChangeNotifier {
 
   String _uid = 'guest-local-user';
   String? _selectedFridgeId;
+  DateTime _localUpdatedAt = DateTime.now();
 
   String get uid => _uid;
+  DateTime get localUpdatedAt => _localUpdatedAt;
   UnmodifiableListView<Fridge> get fridges => UnmodifiableListView(_fridges);
   String? get selectedFridgeId => _selectedFridgeId;
 
@@ -86,6 +89,58 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  AppStateSnapshot exportSnapshot() {
+    final fridgeSnapshots = _fridges
+        .map(
+          (f) => FridgeSnapshot(
+            id: f.id,
+            name: f.name,
+            createdAt: f.createdAt,
+            updatedAt: f.updatedAt ?? f.createdAt,
+            isDefault: f.isDefault,
+          ),
+        )
+        .toList();
+
+    final itemSnapshots = _itemsByFridge.values
+        .expand((list) => list)
+        .map(
+          (item) => FoodItemSnapshot(
+            id: item.id,
+            fridgeId: item.fridgeId,
+            name: item.name,
+            type: item.type,
+            startedAt: item.startedAt,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            isActive: item.isActive,
+          ),
+        )
+        .toList();
+
+    return AppStateSnapshot(
+      updatedAt: _localUpdatedAt,
+      fridges: fridgeSnapshots,
+      items: itemSnapshots,
+    );
+  }
+
+  void replaceFromSnapshot(AppStateSnapshot snapshot) {
+    _fridges
+      ..clear()
+      ..addAll(snapshot.fridges.map((e) => e.toModel()));
+
+    _itemsByFridge.clear();
+    for (final itemSnapshot in snapshot.items) {
+      final item = itemSnapshot.toModel();
+      _itemsByFridge.putIfAbsent(item.fridgeId, () => <FoodItem>[]).add(item);
+    }
+
+    _selectedFridgeId = _fridges.isEmpty ? null : _fridges.first.id;
+    _localUpdatedAt = snapshot.updatedAt;
+    notifyListeners();
+  }
+
   void setUid(String value) {
     _uid = value;
     notifyListeners();
@@ -97,15 +152,18 @@ class AppState extends ChangeNotifier {
   }
 
   void addFridge(String name) {
+    final now = DateTime.now();
     final fridge = Fridge(
       id: _id('fridge'),
       name: name,
-      createdAt: DateTime.now(),
+      createdAt: now,
+      updatedAt: now,
       isDefault: _fridges.isEmpty,
     );
     _fridges.add(fridge);
     _itemsByFridge[fridge.id] = <FoodItem>[];
     _selectedFridgeId ??= fridge.id;
+    _touch();
     notifyListeners();
   }
 
@@ -113,6 +171,7 @@ class AppState extends ChangeNotifier {
     final fridge = _fridges.firstWhere((f) => f.id == id);
     fridge.name = name;
     fridge.updatedAt = DateTime.now();
+    _touch();
     notifyListeners();
   }
 
@@ -136,6 +195,7 @@ class AppState extends ChangeNotifier {
     if (_selectedFridgeId == id) {
       _selectedFridgeId = _fridges.first.id;
     }
+    _touch();
     notifyListeners();
     return true;
   }
@@ -159,6 +219,7 @@ class AppState extends ChangeNotifier {
       updatedAt: DateTime.now(),
     );
     _itemsByFridge.putIfAbsent(fridgeId, () => <FoodItem>[]).add(item);
+    _touch();
     notifyListeners();
   }
 
@@ -166,12 +227,14 @@ class AppState extends ChangeNotifier {
     item.name = name;
     item.startedAt = startedAt;
     item.updatedAt = DateTime.now();
+    _touch();
     notifyListeners();
   }
 
   void deleteItem(FoodItem item, {required String reason}) {
     item.isActive = false;
     item.updatedAt = DateTime.now();
+    _touch();
     notifyListeners();
   }
 
@@ -299,6 +362,10 @@ class AppState extends ChangeNotifier {
       type: FoodType.sideDish,
       startedAt: DateTime.now().subtract(const Duration(days: 8)),
     );
+  }
+
+  void _touch() {
+    _localUpdatedAt = DateTime.now();
   }
 
   String _id(String prefix) {

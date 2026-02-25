@@ -6,6 +6,7 @@ import '../models/food_item.dart';
 import '../models/recommendation.dart';
 import '../services/date_key.dart';
 import '../state/app_state.dart';
+import '../state/auth_controller.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -271,6 +272,8 @@ class _SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final auth = Provider.of<AuthController?>(context);
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -288,6 +291,50 @@ class _SettingsPage extends StatelessWidget {
               title: const Text('사용자 식별자 (UID)'),
               subtitle: Text(state.uid),
             ),
+            if (auth != null) ...<Widget>[
+              ListTile(
+                leading: const Icon(Icons.login),
+                title: Text(auth.isLoggedIn ? '회원 로그인됨' : '비회원 사용 중'),
+                subtitle: auth.lastError == null ? null : Text('오류: ${auth.lastError}'),
+              ),
+              Wrap(
+                spacing: 8,
+                children: <Widget>[
+                  FilledButton(
+                    onPressed: auth.isBusy
+                        ? null
+                        : () async {
+                            await auth.signInWithGoogle();
+                            if (!context.mounted) {
+                              return;
+                            }
+                            await _handleMergePrompt(context, auth);
+                          },
+                    child: const Text('Google 로그인'),
+                  ),
+                  OutlinedButton(
+                    onPressed: auth.isBusy
+                        ? null
+                        : () async {
+                            await auth.signInWithApple();
+                            if (!context.mounted) {
+                              return;
+                            }
+                            await _handleMergePrompt(context, auth);
+                          },
+                    child: const Text('Apple 로그인'),
+                  ),
+                  TextButton(
+                    onPressed: auth.isBusy ? null : auth.signOutToGuest,
+                    child: const Text('비회원으로 전환'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '병합 정책: 클라우드 데이터 없으면 자동 병합, 있으면 최신 업데이트 기준으로 선택',
+              ),
+            ],
             ListTile(
               leading: const Icon(Icons.thumb_up_alt_outlined),
               title: const Text('최근 7일 좋아요 비율'),
@@ -299,6 +346,46 @@ class _SettingsPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _handleMergePrompt(
+    BuildContext context,
+    AuthController auth,
+  ) async {
+    final prompt = auth.pendingMergePrompt;
+    if (prompt == null) {
+      return;
+    }
+
+    final choice = await showDialog<MergeChoice>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('데이터 병합 방식 선택'),
+        content: Text(
+          '로컬: ${toDateKey(prompt.localUpdatedAt)}\n'
+          '클라우드: ${toDateKey(prompt.cloudUpdatedAt)}\n\n'
+          '${prompt.isCloudNewer ? '클라우드 데이터가 더 최신입니다.' : '로컬 데이터가 더 최신입니다.'}',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(MergeChoice.useCloud),
+            child: const Text('클라우드 사용'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(MergeChoice.keepLocal),
+            child: const Text('로컬 업로드'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(MergeChoice.mergeByLatest),
+            child: const Text('최신 기준 병합'),
+          ),
+        ],
+      ),
+    );
+
+    if (choice != null) {
+      await auth.resolvePendingMerge(choice);
+    }
   }
 }
 
