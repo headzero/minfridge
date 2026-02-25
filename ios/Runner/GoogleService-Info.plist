@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.minfridge</string>
+	<string>com.sleepygo.minfridge</string>
 	<key>PROJECT_ID</key>
 	<string>minfridge-headzero-e421d</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,7 +25,7 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:399319584583:ios:d1fe45c2b8773ee6060662</string>
+	<string>1:399319584583:ios:308f04b41b788fcb060662</string>
 	<key>DATABASE_URL</key>
 	<string>https://minfridge-headzero-e421d-default-rtdb.asia-southeast1.firebasedatabase.app</string>
 </dict>

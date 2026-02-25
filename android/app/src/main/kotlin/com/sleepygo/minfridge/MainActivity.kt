@@ -1,4 +1,4 @@
-package com.example.minfridge
+package com.sleepygo.minfridge
 
 import io.flutter.embedding.android.FlutterActivity
 

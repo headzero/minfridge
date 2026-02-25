@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCBdGYgxfgN_lc032w60kvdRWd1PpwUPp8',
-    appId: '1:399319584583:android:ce9bb224e63487fe060662',
+    appId: '1:399319584583:android:07ce350d3be51142060662',
     messagingSenderId: '399319584583',
     projectId: 'minfridge-headzero-e421d',
     databaseURL: 'https://minfridge-headzero-e421d-default-rtdb.asia-southeast1.firebasedatabase.app',
@@ -60,11 +60,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBIAK9-5X6zjwI4k3SDNaZoJafTx0zo98Y',
-    appId: '1:399319584583:ios:d1fe45c2b8773ee6060662',
+    appId: '1:399319584583:ios:308f04b41b788fcb060662',
     messagingSenderId: '399319584583',
     projectId: 'minfridge-headzero-e421d',
     databaseURL: 'https://minfridge-headzero-e421d-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'minfridge-headzero-e421d.firebasestorage.app',
-    iosBundleId: 'com.example.minfridge',
+    iosBundleId: 'com.sleepygo.minfridge',
   );
+
 }
