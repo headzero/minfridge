@@ -1,4 +1,5 @@
 import '../models/app_state_snapshot.dart';
+import '../models/sync_merge_report.dart';
 
 abstract class SyncRepository {
   Future<bool> hasCloudData(String uid);
@@ -13,5 +14,8 @@ abstract class SyncRepository {
 
   Future<AppStateSnapshot?> downloadSnapshot(String uid);
 
-  Future<void> mergeByLatest(String uid, AppStateSnapshot localSnapshot);
+  Future<SyncMergeReport> mergeByLatest(
+    String uid,
+    AppStateSnapshot localSnapshot,
+  );
 }

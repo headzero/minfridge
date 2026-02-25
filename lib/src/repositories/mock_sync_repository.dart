@@ -1,4 +1,5 @@
 import '../models/app_state_snapshot.dart';
+import '../models/sync_merge_report.dart';
 import 'sync_repository.dart';
 
 class MockSyncRepository implements SyncRepository {
@@ -31,10 +32,28 @@ class MockSyncRepository implements SyncRepository {
   }
 
   @override
-  Future<void> mergeByLatest(String uid, AppStateSnapshot localSnapshot) async {
+  Future<SyncMergeReport> mergeByLatest(
+    String uid,
+    AppStateSnapshot localSnapshot,
+  ) async {
     final cloud = _cloud[uid];
     if (cloud == null || localSnapshot.updatedAt.isAfter(cloud.updatedAt)) {
       _cloud[uid] = localSnapshot;
+      return SyncMergeReport(
+        fridgeFromLocal: localSnapshot.fridges.length,
+        fridgeFromCloud: 0,
+        itemFromLocal: localSnapshot.items.length,
+        itemFromCloud: 0,
+        resultUpdatedAt: localSnapshot.updatedAt,
+      );
     }
+
+    return SyncMergeReport(
+      fridgeFromLocal: 0,
+      fridgeFromCloud: cloud.fridges.length,
+      itemFromLocal: 0,
+      itemFromCloud: cloud.items.length,
+      resultUpdatedAt: cloud.updatedAt,
+    );
   }
 }

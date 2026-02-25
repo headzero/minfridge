@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
-import 'src/repositories/mock_recipe_repository.dart';
 import 'src/repositories/firebase_sync_repository.dart';
+import 'src/repositories/mock_recipe_repository.dart';
+import 'src/services/firebase_sync_event_logger.dart';
 import 'src/services/recommendation_scheduler.dart';
 import 'src/state/app_state.dart';
 import 'src/state/auth_controller.dart';
@@ -25,6 +26,7 @@ Future<void> main() async {
   final authController = AuthController(
     firebaseAuth: FirebaseAuth.instance,
     syncRepository: FirebaseSyncRepository(),
+    syncEventLogger: FirebaseSyncEventLogger(),
   )
     ..attachAppState(appState)
     ..bootstrap();
