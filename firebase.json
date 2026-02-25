@@ -1,1 +1,33 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"minfridge-headzero-e421d","appId":"1:399319584583:android:ce9bb224e63487fe060662","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"minfridge-headzero-e421d","appId":"1:399319584583:ios:d1fe45c2b8773ee6060662","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"minfridge-headzero-e421d","configurations":{"android":"1:399319584583:android:ce9bb224e63487fe060662","ios":"1:399319584583:ios:d1fe45c2b8773ee6060662"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "minfridge-headzero-e421d",
+          "appId": "1:399319584583:android:ce9bb224e63487fe060662",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "minfridge-headzero-e421d",
+          "appId": "1:399319584583:ios:d1fe45c2b8773ee6060662",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "minfridge-headzero-e421d",
+          "configurations": {
+            "android": "1:399319584583:android:ce9bb224e63487fe060662",
+            "ios": "1:399319584583:ios:d1fe45c2b8773ee6060662"
+          }
+        }
+      }
+    }
+  },
+  "database": {
+    "rules": "database.rules.json"
+  }
+}
