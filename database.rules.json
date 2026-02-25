@@ -5,7 +5,37 @@
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
+        ".write": false,
+        "meta": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid",
+          "localUpdatedAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          },
+          "serverUpdatedAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "fridges": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid",
+          "$fridgeId": {
+            ".validate": "!newData.exists() || (newData.hasChildren(['id','name','createdAt','updatedAt','isDefault']) && newData.child('id').isString() && newData.child('id').val() === $fridgeId && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 40 && newData.child('createdAt').isNumber() && newData.child('updatedAt').isNumber() && newData.child('isDefault').isBoolean())"
+          }
+        },
+        "items": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid",
+          "$itemId": {
+            ".validate": "!newData.exists() || (newData.hasChildren(['id','fridgeId','name','type','startedAt','createdAt','updatedAt','isActive']) && newData.child('id').isString() && newData.child('id').val() === $itemId && newData.child('fridgeId').isString() && newData.child('fridgeId').val().length > 0 && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 60 && newData.child('type').isString() && (newData.child('type').val() === 'ingredient' || newData.child('type').val() === 'sideDish') && newData.child('startedAt').isNumber() && newData.child('createdAt').isNumber() && newData.child('updatedAt').isNumber() && newData.child('isActive').isBoolean())"
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     }
   }
