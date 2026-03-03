@@ -14,8 +14,8 @@ class AppState extends ChangeNotifier {
   AppState({
     required RecipeRepository recipeRepository,
     required RecommendationScheduler scheduler,
-  })  : _recipeRepository = recipeRepository,
-        _scheduler = scheduler {
+  }) : _recipeRepository = recipeRepository,
+       _scheduler = scheduler {
     _seedInitialData();
   }
 
@@ -69,13 +69,14 @@ class AppState extends ChangeNotifier {
 
   double get recent7DayLikeRatio {
     final now = DateTime.now();
-    final recent = _feedbackByDate.entries.where((entry) {
-      final date = DateTime.tryParse(entry.key);
-      if (date == null) {
-        return false;
-      }
-      return now.difference(date).inDays < 7;
-    }).toList();
+    final recent =
+        _feedbackByDate.entries.where((entry) {
+          final date = DateTime.tryParse(entry.key);
+          if (date == null) {
+            return false;
+          }
+          return now.difference(date).inDays < 7;
+        }).toList();
 
     if (recent.isEmpty) {
       return 1.0;
@@ -90,33 +91,35 @@ class AppState extends ChangeNotifier {
   }
 
   AppStateSnapshot exportSnapshot() {
-    final fridgeSnapshots = _fridges
-        .map(
-          (f) => FridgeSnapshot(
-            id: f.id,
-            name: f.name,
-            createdAt: f.createdAt,
-            updatedAt: f.updatedAt ?? f.createdAt,
-            isDefault: f.isDefault,
-          ),
-        )
-        .toList();
+    final fridgeSnapshots =
+        _fridges
+            .map(
+              (f) => FridgeSnapshot(
+                id: f.id,
+                name: f.name,
+                createdAt: f.createdAt,
+                updatedAt: f.updatedAt ?? f.createdAt,
+                isDefault: f.isDefault,
+              ),
+            )
+            .toList();
 
-    final itemSnapshots = _itemsByFridge.values
-        .expand((list) => list)
-        .map(
-          (item) => FoodItemSnapshot(
-            id: item.id,
-            fridgeId: item.fridgeId,
-            name: item.name,
-            type: item.type,
-            startedAt: item.startedAt,
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt,
-            isActive: item.isActive,
-          ),
-        )
-        .toList();
+    final itemSnapshots =
+        _itemsByFridge.values
+            .expand((list) => list)
+            .map(
+              (item) => FoodItemSnapshot(
+                id: item.id,
+                fridgeId: item.fridgeId,
+                name: item.name,
+                type: item.type,
+                startedAt: item.startedAt,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt,
+                isActive: item.isActive,
+              ),
+            )
+            .toList();
 
     return AppStateSnapshot(
       updatedAt: _localUpdatedAt,
@@ -223,7 +226,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateItem(FoodItem item, {required String name, required DateTime startedAt}) {
+  void updateItem(
+    FoodItem item, {
+    required String name,
+    required DateTime startedAt,
+  }) {
     item.name = name;
     item.startedAt = startedAt;
     item.updatedAt = DateTime.now();
@@ -322,7 +329,7 @@ class AppState extends ChangeNotifier {
       targetDate: today,
     );
 
-    if (shouldRun && !_scheduler.isAfterMorningReadOnlyTime(now)) {
+    if (shouldRun && _scheduler.isInPregenWindow(now)) {
       await generateTodayRecommendationIfMissing();
       return;
     }
@@ -342,9 +349,13 @@ class AppState extends ChangeNotifier {
   bool _shouldUseHighQualityModel() {
     final lowLikeRatio = recent7DayLikeRatio < 0.4;
     final today = todayRecommendation;
-    final lowCoverage = today == null
-        ? true
-        : (today.breakfast.length + today.lunch.length + today.dinner.length) < 3;
+    final lowCoverage =
+        today == null
+            ? true
+            : (today.breakfast.length +
+                    today.lunch.length +
+                    today.dinner.length) <
+                3;
     return lowLikeRatio && lowCoverage;
   }
 

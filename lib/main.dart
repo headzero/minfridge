@@ -9,6 +9,8 @@ import 'src/repositories/local_snapshot_repository.dart';
 import 'src/repositories/mock_recipe_repository.dart';
 import 'src/services/app_state_persistence_manager.dart';
 import 'src/services/firebase_sync_event_logger.dart';
+import 'src/services/local_notification_service.dart';
+import 'src/services/recommendation_automation_service.dart';
 import 'src/services/recommendation_scheduler.dart';
 import 'src/state/app_state.dart';
 import 'src/state/auth_controller.dart';
@@ -16,9 +18,7 @@ import 'src/ui/app.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   final appState = AppState(
     recipeRepository: MockRecipeRepository(),
@@ -40,11 +40,25 @@ Future<void> main() async {
   )..attachAppState(appState);
   await authController.bootstrap();
 
+  final notificationService = LocalNotificationService();
+  await notificationService.initialize();
+
+  final automationService = RecommendationAutomationService(
+    appState: appState,
+    scheduler: RecommendationScheduler(),
+    notificationService: notificationService,
+  );
+  await automationService.start();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider<AppState>.value(value: appState),
         ChangeNotifierProvider<AuthController>.value(value: authController),
+        Provider<LocalNotificationService>.value(value: notificationService),
+        Provider<RecommendationAutomationService>.value(
+          value: automationService,
+        ),
       ],
       child: const MinFridgeApp(),
     ),
