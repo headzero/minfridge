@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
 import 'src/repositories/firebase_sync_repository.dart';
+import 'src/repositories/local_snapshot_repository.dart';
 import 'src/repositories/mock_recipe_repository.dart';
+import 'src/services/app_state_persistence_manager.dart';
 import 'src/services/firebase_sync_event_logger.dart';
 import 'src/services/recommendation_scheduler.dart';
 import 'src/state/app_state.dart';
@@ -21,15 +23,22 @@ Future<void> main() async {
   final appState = AppState(
     recipeRepository: MockRecipeRepository(),
     scheduler: RecommendationScheduler(),
-  )..bootstrap();
+  );
+
+  final localRepository = LocalSnapshotRepository();
+  final persistenceManager = AppStatePersistenceManager(
+    repository: localRepository,
+  );
+  await persistenceManager.hydrate(appState);
+  await appState.bootstrap();
+  persistenceManager.bindAutoSave(appState);
 
   final authController = AuthController(
     firebaseAuth: FirebaseAuth.instance,
     syncRepository: FirebaseSyncRepository(),
     syncEventLogger: FirebaseSyncEventLogger(),
-  )
-    ..attachAppState(appState)
-    ..bootstrap();
+  )..attachAppState(appState);
+  await authController.bootstrap();
 
   runApp(
     MultiProvider(
