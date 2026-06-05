@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>하루한칸 — 홈 디자인 탐색</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Pretendard', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+  .msi {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal; font-style: normal; line-height: 1;
+    letter-spacing: normal; text-transform: none; display: inline-block;
+    white-space: nowrap; direction: ltr; font-feature-settings: 'liga';
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased; user-select: none; flex: 0 0 auto;
+  }
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<rect width="100" height="100" rx="22" fill="#E9F3D6"/>
+<rect x="38" y="30" width="24" height="40" rx="5" fill="#6BA830"/>
+<rect x="40.5" y="46" width="19" height="1.6" fill="#E9F3D6"/>
+<circle cx="44" cy="38" r="1.8" fill="#E9F3D6"/>
+<circle cx="44" cy="56" r="1.8" fill="#E9F3D6"/>
+</svg>
+</template>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="mf-atoms.jsx"></script>
+<script type="text/babel" src="mf-spec.jsx"></script>
+<script type="text/babel" src="mf-homes.jsx"></script>
+<script type="text/babel" src="mf-merged.jsx"></script>
+<script type="text/babel" src="mf-today.jsx"></script>
+<script type="text/babel" src="mf-screens.jsx"></script>
+<script type="text/babel" src="mf-states.jsx"></script>
+<script type="text/babel">
+  const { createRoot } = ReactDOM;
+  function App() {
+    return (
+      <DesignCanvas>
+        <DCSection id="ds" title="디자인 시스템" subtitle="연두초록 · Pretendard · 신선도 신호등">
+          <DCArtboard id="tokens" label="토큰 요약" width={470} height={760}><SpecSheet /></DCArtboard>
+        </DCSection>
+        <DCSection id="merged" title="통합안 v2 ★ A 상단 + 칸 공간화 (작은 타일 · 줄바꿈 세로 스크롤)" subtitle="홈 토글(임박순↔칸별·마지막 설정 지속) / 상세 팝업 / 추가·수정 시트">
+          <DCArtboard id="home" label="홈 — 토글 작동 (임박순 ↔ 칸별, 탭해보세요 · 설정 지속)" width={390} height={844}><HomeMerged /></DCArtboard>
+          <DCArtboard id="detail" label="아이템 상세 팝업 (타일 탭) — 소진 · 수정 · 폐기" width={390} height={844}><ItemDetailSheet /></DCArtboard>
+          <DCArtboard id="edit" label="추가·수정 시트 — 예상 유통기한 미리보기 + 직접 입력 (+ 냉장/냉동 선택)" width={390} height={844}><AddEditSheet /></DCArtboard>
+        </DCSection>
+        <DCSection id="today" title="오늘 추천 — 3상태" subtitle="끼니별 은은한 색 구분 · 보유 재료 기반">
+          <DCArtboard id="t-ok" label="성공 — 아침 / 점심 / 저녁" width={390} height={844}><TodaySuccess /></DCArtboard>
+          <DCArtboard id="t-loading" label="로딩 — 생성 중 (스켈레톤)" width={390} height={844}><TodayLoading /></DCArtboard>
+          <DCArtboard id="t-fail" label="실패 — 재시도 유도" width={390} height={844}><TodayFailure /></DCArtboard>
+        </DCSection>
+        <DCSection id="more" title="히스토리 · 설정" subtitle="배너 없음">
+          <DCArtboard id="hist" label="히스토리 — 날짜별 (좋아요 표시)" width={390} height={844}><HistoryScreen /></DCArtboard>
+          <DCArtboard id="hist-empty" label="히스토리 — 빈 상태" width={390} height={844}><HistoryEmpty /></DCArtboard>
+          <DCArtboard id="settings" label="설정 — 계정 / 알림 / 활동" width={390} height={844}><SettingsScreen /></DCArtboard>
+        </DCSection>
+        <DCSection id="states" title="상태 · 모달" subtitle="빈 상태 / 점유율 초과 / 냉장고 관리 / 데이터 병합 / 만족도">
+          <DCArtboard id="empty" label="홈 — 빈 재고 상태" width={390} height={844}><HomeMerged empty /></DCArtboard>
+          <DCArtboard id="over" label="홈 — 점유율 초과 경고 (84%)" width={390} height={844}><HomeMerged gauge={0.84} /></DCArtboard>
+          <DCArtboard id="fridge-mgr" label="냉장고 관리 (바텀시트)" width={390} height={844}><FridgeManagerSheet /></DCArtboard>
+          <DCArtboard id="merge" label="데이터 병합 다이얼로그" width={390} height={844}><MergeDialog /></DCArtboard>
+          <DCArtboard id="satis" label="만족도 다이얼로그 (백버튼 종료 시)" width={390} height={844}><SatisfactionDialog /></DCArtboard>
+        </DCSection>
+        <DCSection id="home" title="1차 탐색 (참고) — 홈 3가지 방향" subtitle="냉장고 선택 + 점유율 + 재고. 같은 데이터, 다른 표현">
+          <DCArtboard id="a" label="A · 따뜻한 카드형 (좌측 신호바 · 막대 게이지)" width={390} height={844}><HomeA /></DCArtboard>
+          <DCArtboard id="b" label="B · 냉장고 칸 공간화 (선반 메타포 · 세그먼트 게이지)" width={390} height={844}><HomeB /></DCArtboard>
+          <DCArtboard id="c" label="C · 미니멀 모던 (틴트 도트 · 링 게이지)" width={390} height={844}><HomeC /></DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+    );
+  }
+  createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
