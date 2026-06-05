@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
 import 'src/repositories/firebase_sync_repository.dart';
+import 'src/repositories/local_recommendation_store.dart';
 import 'src/repositories/local_snapshot_repository.dart';
 import 'src/repositories/mock_recipe_repository.dart';
 import 'src/services/app_state_persistence_manager.dart';
@@ -26,8 +27,10 @@ Future<void> main() async {
   );
 
   final localRepository = LocalSnapshotRepository();
+  final recommendationStore = LocalRecommendationStore();
   final persistenceManager = AppStatePersistenceManager(
     repository: localRepository,
+    recommendationStore: recommendationStore,
   );
   await persistenceManager.hydrate(appState);
   await appState.bootstrap();

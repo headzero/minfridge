@@ -183,6 +183,65 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  /// 로컬 전용 세션 상태(추천 히스토리/쿼터/만족도)를 직렬화한다.
+  /// 보존 기간을 넘긴 항목은 저장 시점에 정리해 무한 증가를 막는다.
+  Map<String, Object?> exportSessionState() {
+    final now = DateTime.now();
+
+    bool withinDays(String dateKey, int days) {
+      final date = DateTime.tryParse(dateKey);
+      if (date == null) {
+        return false;
+      }
+      return now.difference(date).inDays <= days;
+    }
+
+    final recommendations = <String, Object?>{
+      for (final entry in _recommendations.entries)
+        if (withinDays(entry.key, 365)) entry.key: entry.value.toJson(),
+    };
+    final quota = <String, Object?>{
+      for (final entry in _quotaByDate.entries)
+        if (withinDays(entry.key, 2)) entry.key: entry.value.toJson(),
+    };
+    final feedback = <String, Object?>{
+      for (final entry in _feedbackByDate.entries)
+        if (withinDays(entry.key, 14)) entry.key: entry.value,
+    };
+
+    return <String, Object?>{
+      'recommendations': recommendations,
+      'quota': quota,
+      'feedback': feedback,
+    };
+  }
+
+  void importSessionState(Map<String, dynamic> data) {
+    Map<String, dynamic> asMap(Object? value) {
+      if (value is Map) {
+        return value.map((k, v) => MapEntry(k.toString(), v));
+      }
+      return <String, dynamic>{};
+    }
+
+    asMap(data['recommendations']).forEach((key, value) {
+      if (value is Map) {
+        _recommendations[key] = DailyRecommendation.fromJson(asMap(value));
+      }
+    });
+    asMap(data['quota']).forEach((key, value) {
+      if (value is Map) {
+        _quotaByDate[key] = _RefreshQuota.fromJson(asMap(value));
+      }
+    });
+    asMap(data['feedback']).forEach((key, value) {
+      if (value is bool) {
+        _feedbackByDate[key] = value;
+      }
+    });
+    notifyListeners();
+  }
+
   void replaceFromSnapshot(AppStateSnapshot snapshot) {
     _fridges
       ..clear()
@@ -494,11 +553,39 @@ class _ResolvedExpiry {
 class _RefreshQuota {
   _RefreshQuota();
 
+  factory _RefreshQuota.fromJson(Map<String, dynamic> json) {
+    final quota = _RefreshQuota();
+    int toInt(Object? value) => value is num ? value.toInt() : 0;
+    quota.used = toInt(json['used']);
+    quota.successCount = toInt(json['successCount']);
+    quota.failureCount = toInt(json['failureCount']);
+    final blocked = json['blockedUntil'];
+    quota.blockedUntil =
+        blocked is num
+            ? DateTime.fromMillisecondsSinceEpoch(blocked.toInt())
+            : null;
+    final day = json['day'];
+    if (day is num) {
+      quota._day = DateTime.fromMillisecondsSinceEpoch(day.toInt());
+    }
+    return quota;
+  }
+
   int used = 0;
   int successCount = 0;
   int failureCount = 0;
   DateTime? blockedUntil;
   DateTime _day = DateTime.now();
+
+  Map<String, Object?> toJson() {
+    return <String, Object?>{
+      'used': used,
+      'successCount': successCount,
+      'failureCount': failureCount,
+      'blockedUntil': blockedUntil?.millisecondsSinceEpoch,
+      'day': _day.millisecondsSinceEpoch,
+    };
+  }
 
   int get remaining => (3 - used).clamp(0, 3);
 
