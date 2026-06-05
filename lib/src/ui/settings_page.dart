@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
 import '../state/auth_controller.dart';
+import '../state/theme_controller.dart';
 import 'dialogs.dart';
 import 'widgets/common.dart';
 
@@ -92,6 +93,17 @@ class SettingsPage extends StatelessWidget {
                   ],
                 ),
                 _Group(
+                  title: '화면',
+                  children: const <Widget>[
+                    _Row(
+                      icon: Icons.dark_mode_outlined,
+                      title: '테마',
+                      subtitle: '시스템 설정을 따르거나 직접 선택',
+                    ),
+                    _ThemeSelector(),
+                  ],
+                ),
+                _Group(
                   title: '알림',
                   children: <Widget>[
                     _Row(
@@ -169,6 +181,58 @@ class _Group extends StatelessWidget {
             child: Column(children: children),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ThemeSelector extends StatelessWidget {
+  const _ThemeSelector();
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.watch<ThemeController?>();
+    final scheme = Theme.of(context).colorScheme;
+    final mf = mfColors(context);
+    final current = controller?.mode ?? ThemeMode.light;
+
+    Widget seg(ThemeMode mode, String label) {
+      final on = mode == current;
+      return Expanded(
+        child: GestureDetector(
+          onTap: () => controller?.setMode(mode),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 1.5),
+            height: 36,
+            decoration: BoxDecoration(
+              color: on ? scheme.surface : Colors.transparent,
+              borderRadius: BorderRadius.circular(9),
+              boxShadow: on
+                  ? <BoxShadow>[BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 3, offset: const Offset(0, 1))]
+                  : null,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: on ? scheme.onSurface : scheme.onSurfaceVariant),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(color: mf.sunken, borderRadius: BorderRadius.circular(12)),
+        child: Row(
+          children: <Widget>[
+            seg(ThemeMode.system, '시스템'),
+            seg(ThemeMode.light, '라이트'),
+            seg(ThemeMode.dark, '다크'),
+          ],
+        ),
       ),
     );
   }

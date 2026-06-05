@@ -15,6 +15,7 @@ import 'src/services/recommendation_automation_service.dart';
 import 'src/services/recommendation_scheduler.dart';
 import 'src/state/app_state.dart';
 import 'src/state/auth_controller.dart';
+import 'src/state/theme_controller.dart';
 import 'src/ui/app.dart';
 
 Future<void> main() async {
@@ -62,11 +63,15 @@ Future<void> main() async {
   );
   await automationService.start();
 
+  final themeController = ThemeController();
+  await themeController.load();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider<AppState>.value(value: appState),
         ChangeNotifierProvider<AuthController>.value(value: authController),
+        ChangeNotifierProvider<ThemeController>.value(value: themeController),
         Provider<LocalNotificationService>.value(value: notificationService),
         Provider<RecommendationAutomationService>.value(
           value: automationService,
