@@ -41,10 +41,19 @@ Future<void> main() async {
     syncRepository: FirebaseSyncRepository(),
     syncEventLogger: FirebaseSyncEventLogger(),
   )..attachAppState(appState);
-  await authController.bootstrap();
+  // 인증/동기화 실패가 앱 시작 자체를 막지 않도록 한다(로컬 우선).
+  try {
+    await authController.bootstrap();
+  } catch (_) {
+    // 익명 로그인 미설정·네트워크 오류 등은 무시하고 로컬 데이터로 구동한다.
+  }
 
   final notificationService = LocalNotificationService();
-  await notificationService.initialize();
+  try {
+    await notificationService.initialize();
+  } catch (_) {
+    // 알림 초기화 실패도 앱 구동을 막지 않는다.
+  }
 
   final automationService = RecommendationAutomationService(
     appState: appState,
