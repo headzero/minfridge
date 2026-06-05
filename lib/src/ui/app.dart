@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'home_shell.dart';
+import 'theme/minfridge_theme.dart';
 
 class MinFridgeApp extends StatelessWidget {
   const MinFridgeApp({super.key});
@@ -10,10 +11,9 @@ class MinFridgeApp extends StatelessWidget {
     return MaterialApp(
       title: 'MINFRIDGE',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0F766E)),
-        useMaterial3: true,
-      ),
+      theme: MinfridgeTheme.light(),
+      darkTheme: MinfridgeTheme.dark(),
+      themeMode: ThemeMode.light,
       home: const HomeShell(),
     );
   }

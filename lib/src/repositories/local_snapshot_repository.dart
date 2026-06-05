@@ -52,6 +52,7 @@ class LocalSnapshotRepository {
                   'name': i.name,
                   'type': i.type.name,
                   'quantity': i.quantity,
+                  'store': i.store.name,
                   'startedAt': i.startedAt.millisecondsSinceEpoch,
                   'expiresAt': i.expiresAt?.millisecondsSinceEpoch,
                   'expirySource': i.expirySource?.name,
@@ -121,6 +122,7 @@ class LocalSnapshotRepository {
             name: name,
             type: type,
             quantity: _toInt(row['quantity'], fallback: 1),
+            store: _toStore(row['store']),
             startedAt: _toDateTime(row['startedAt']),
             expiresAt: _toNullableDateTime(row['expiresAt']),
             expirySource: _toExpirySource(row['expirySource']),
@@ -168,5 +170,14 @@ class LocalSnapshotRepository {
       return ExpirySource.estimated;
     }
     return null;
+  }
+
+  StoreType _toStore(Object? value) {
+    for (final store in StoreType.values) {
+      if (value == store.name) {
+        return store;
+      }
+    }
+    return StoreType.cold;
   }
 }

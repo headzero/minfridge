@@ -3,6 +3,9 @@ enum FoodType { ingredient, sideDish }
 /// 유통기한 값의 출처. 사용자가 직접 입력했는지, 자동 추정했는지 구분한다.
 enum ExpirySource { manual, estimated }
 
+/// 보관 방식. 유통기한 자동 추정과 칸별 분류에 사용한다.
+enum StoreType { cold, frozen, room }
+
 class FoodItem {
   FoodItem({
     required this.id,
@@ -10,6 +13,7 @@ class FoodItem {
     required this.name,
     required this.type,
     this.quantity = 1,
+    this.store = StoreType.cold,
     required this.startedAt,
     this.expiresAt,
     this.expirySource,
@@ -23,6 +27,7 @@ class FoodItem {
   String name;
   FoodType type;
   int quantity;
+  StoreType store;
   DateTime startedAt;
   DateTime? expiresAt;
   ExpirySource? expirySource;

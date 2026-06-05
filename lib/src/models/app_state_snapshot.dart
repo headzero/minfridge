@@ -46,6 +46,7 @@ class FoodItemSnapshot {
     required this.name,
     required this.type,
     required this.quantity,
+    this.store = StoreType.cold,
     required this.startedAt,
     this.expiresAt,
     this.expirySource,
@@ -59,6 +60,7 @@ class FoodItemSnapshot {
   final String name;
   final FoodType type;
   final int quantity;
+  final StoreType store;
   final DateTime startedAt;
   final DateTime? expiresAt;
   final ExpirySource? expirySource;
@@ -73,6 +75,7 @@ class FoodItemSnapshot {
       name: name,
       type: type,
       quantity: quantity,
+      store: store,
       startedAt: startedAt,
       expiresAt: expiresAt,
       expirySource: expirySource,

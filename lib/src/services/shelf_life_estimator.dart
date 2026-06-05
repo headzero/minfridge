@@ -53,24 +53,37 @@ class ShelfLifeEstimator {
   static const int _defaultIngredientDays = 7;
   static const int _defaultSideDishDays = 5;
 
-  int estimateDays({required String name, required FoodType type}) {
+  /// 냉동 보관 시 최소 보장 일수(장기 보관). 키워드 추정값보다 길면 그대로 사용.
+  static const int _frozenMinDays = 90;
+
+  int estimateDays({
+    required String name,
+    required FoodType type,
+    StoreType store = StoreType.cold,
+  }) {
     final trimmed = name.trim();
-    for (final entry in _keywordDays) {
-      if (trimmed.contains(entry.key)) {
-        return entry.value;
-      }
-    }
-    return type == FoodType.sideDish
+    var days = type == FoodType.sideDish
         ? _defaultSideDishDays
         : _defaultIngredientDays;
+    for (final entry in _keywordDays) {
+      if (trimmed.contains(entry.key)) {
+        days = entry.value;
+        break;
+      }
+    }
+    if (store == StoreType.frozen) {
+      days = days > _frozenMinDays ? days : _frozenMinDays;
+    }
+    return days;
   }
 
   DateTime estimate({
     required String name,
     required FoodType type,
     required DateTime startedAt,
+    StoreType store = StoreType.cold,
   }) {
-    final days = estimateDays(name: name, type: type);
+    final days = estimateDays(name: name, type: type, store: store);
     return DateTime(
       startedAt.year,
       startedAt.month,

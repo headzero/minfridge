@@ -96,8 +96,14 @@ class AppState extends ChangeNotifier {
     required String name,
     required FoodType type,
     required DateTime startedAt,
+    StoreType store = StoreType.cold,
   }) {
-    return _estimator.estimate(name: name, type: type, startedAt: startedAt);
+    return _estimator.estimate(
+      name: name,
+      type: type,
+      startedAt: startedAt,
+      store: store,
+    );
   }
 
   double get fridgeGaugeProgress {
@@ -118,6 +124,9 @@ class AppState extends ChangeNotifier {
   DailyRecommendation? get todayRecommendation {
     return _recommendations[toDateKey(DateTime.now())];
   }
+
+  /// 특정 날짜의 만족도(좋아요=true/싫어요=false). 입력 없으면 null.
+  bool? likedOn(String dateKey) => _feedbackByDate[dateKey];
 
   double get recent7DayLikeRatio {
     final now = DateTime.now();
@@ -166,6 +175,7 @@ class AppState extends ChangeNotifier {
                 name: item.name,
                 type: item.type,
                 quantity: item.quantity,
+                store: item.store,
                 startedAt: item.startedAt,
                 expiresAt: item.expiresAt,
                 expirySource: item.expirySource,
@@ -322,6 +332,7 @@ class AppState extends ChangeNotifier {
     required FoodType type,
     required int quantity,
     required DateTime startedAt,
+    StoreType store = StoreType.cold,
     DateTime? expiresAt,
   }) {
     final fridgeId = _selectedFridgeId;
@@ -331,6 +342,7 @@ class AppState extends ChangeNotifier {
     final resolved = _resolveExpiry(
       name: name,
       type: type,
+      store: store,
       startedAt: startedAt,
       expiresAt: expiresAt,
     );
@@ -340,6 +352,7 @@ class AppState extends ChangeNotifier {
       name: name,
       type: type,
       quantity: quantity,
+      store: store,
       startedAt: startedAt,
       expiresAt: resolved.value,
       expirySource: resolved.source,
@@ -356,16 +369,20 @@ class AppState extends ChangeNotifier {
     required String name,
     required int quantity,
     required DateTime startedAt,
+    StoreType? store,
     DateTime? expiresAt,
   }) {
+    final resolvedStore = store ?? item.store;
     final resolved = _resolveExpiry(
       name: name,
+      type: item.type,
+      store: resolvedStore,
       startedAt: startedAt,
       expiresAt: expiresAt,
-      currentType: item.type,
     );
     item.name = name;
     item.quantity = quantity;
+    item.store = resolvedStore;
     item.startedAt = startedAt;
     item.expiresAt = resolved.value;
     item.expirySource = resolved.source;
@@ -374,21 +391,32 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 유통기한이 명시되면 manual, 비어 있으면 이름/유형 기반 estimated 값으로 채운다.
+  /// 수량만 빠르게 조정(상세 시트의 스테퍼). 1 미만은 무시한다.
+  void setItemQuantity(FoodItem item, int quantity) {
+    if (quantity < 1) {
+      return;
+    }
+    item.quantity = quantity;
+    item.updatedAt = DateTime.now();
+    _touch();
+    notifyListeners();
+  }
+
+  /// 유통기한이 명시되면 manual, 비어 있으면 이름/유형/보관방식 기반 estimated 값으로 채운다.
   _ResolvedExpiry _resolveExpiry({
     required String name,
-    FoodType? type,
+    required FoodType type,
+    required StoreType store,
     required DateTime startedAt,
     required DateTime? expiresAt,
-    FoodType? currentType,
   }) {
     if (expiresAt != null) {
       return _ResolvedExpiry(expiresAt, ExpirySource.manual);
     }
-    final resolvedType = type ?? currentType ?? FoodType.ingredient;
     final estimated = _estimator.estimate(
       name: name,
-      type: resolvedType,
+      type: type,
+      store: store,
       startedAt: startedAt,
     );
     return _ResolvedExpiry(estimated, ExpirySource.estimated);
@@ -530,6 +558,13 @@ class AppState extends ChangeNotifier {
       type: FoodType.sideDish,
       quantity: 1,
       startedAt: DateTime.now().subtract(const Duration(days: 8)),
+    );
+    addItem(
+      name: '냉동만두',
+      type: FoodType.ingredient,
+      quantity: 2,
+      store: StoreType.frozen,
+      startedAt: DateTime.now().subtract(const Duration(days: 5)),
     );
   }
 

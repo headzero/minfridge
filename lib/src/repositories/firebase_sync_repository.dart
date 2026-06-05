@@ -208,6 +208,7 @@ class FirebaseSyncRepository implements SyncRepository {
           'name': i.name,
           'type': i.type.name,
           'quantity': i.quantity,
+          'store': i.store.name,
           'startedAt': i.startedAt.millisecondsSinceEpoch,
           'expiresAt': i.expiresAt?.millisecondsSinceEpoch,
           'expirySource': i.expirySource?.name,
@@ -258,6 +259,7 @@ class FirebaseSyncRepository implements SyncRepository {
       name: name,
       type: type,
       quantity: _toInt(map['quantity'], fallback: 1),
+      store: _toStore(map['store']),
       startedAt: _toDateTime(map['startedAt']),
       expiresAt: _toNullableDateTime(map['expiresAt']),
       expirySource: _toExpirySource(map['expirySource']),
@@ -289,6 +291,15 @@ class FirebaseSyncRepository implements SyncRepository {
       return ExpirySource.estimated;
     }
     return null;
+  }
+
+  StoreType _toStore(Object? value) {
+    for (final store in StoreType.values) {
+      if (value == store.name) {
+        return store;
+      }
+    }
+    return StoreType.cold;
   }
 
   int _toInt(Object? value, {int fallback = 1}) {
