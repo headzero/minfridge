@@ -61,7 +61,9 @@ class _ItemDetailSheet extends StatelessWidget {
         20,
         0,
         20,
-        MediaQuery.of(context).viewInsets.bottom + 22,
+        MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).viewPadding.bottom +
+            22,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -318,7 +320,14 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
         );
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        0,
+        20,
+        MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).viewPadding.bottom +
+            20,
+      ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -595,50 +604,90 @@ class _FridgeManagerSheetState extends State<_FridgeManagerSheet> {
     final mf = mfColors(context);
     final fridges = state.fridges;
 
+    final canReorder = fridges.length > 1;
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).viewInsets.bottom + 22),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        0,
+        20,
+        MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).viewPadding.bottom +
+            22,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           _grabber(context),
-          Text('냉장고 관리', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: scheme.onSurface)),
+          Row(
+            children: <Widget>[
+              Text('냉장고 관리', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: scheme.onSurface)),
+              if (canReorder) ...<Widget>[
+                const SizedBox(width: 8),
+                Text('· 끌어서 순서 변경', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500, color: scheme.onSurfaceVariant)),
+              ],
+            ],
+          ),
           const SizedBox(height: 8),
-          for (final fridge in fridges)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(fridge.name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: scheme.onSurface)),
-                        if (fridge.id == state.selectedFridgeId)
-                          Text('현재 선택됨', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: scheme.primary)),
-                      ],
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            buildDefaultDragHandles: false,
+            itemCount: fridges.length,
+            onReorder: (oldIndex, newIndex) {
+              if (newIndex > oldIndex) {
+                newIndex -= 1;
+              }
+              context.read<AppState>().reorderFridges(oldIndex, newIndex);
+            },
+            itemBuilder: (context, i) {
+              final fridge = fridges[i];
+              return Padding(
+                key: ValueKey<String>(fridge.id),
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: <Widget>[
+                    if (canReorder)
+                      ReorderableDragStartListener(
+                        index: i,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Icon(Icons.drag_handle, size: 20, color: scheme.onSurfaceVariant),
+                        ),
+                      ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(fridge.name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: scheme.onSurface)),
+                          if (fridge.id == state.selectedFridgeId)
+                            Text('현재 선택됨', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: scheme.primary)),
+                        ],
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.drive_file_rename_outline, size: 19, color: scheme.onSurfaceVariant),
-                    onPressed: () => _rename(context, fridge.id, fridge.name),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.delete_outline, size: 19, color: scheme.onSurfaceVariant),
-                    onPressed: () {
-                      if (fridges.length <= 1) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('마지막 1개 냉장고는 삭제할 수 없어요.')),
-                        );
-                        return;
-                      }
-                      final moveTarget = fridges.firstWhere((f) => f.id != fridge.id).id;
-                      state.deleteFridge(fridge.id, moveToFridgeId: moveTarget);
-                    },
-                  ),
-                ],
-              ),
-            ),
+                    IconButton(
+                      icon: Icon(Icons.drive_file_rename_outline, size: 19, color: scheme.onSurfaceVariant),
+                      onPressed: () => _rename(context, fridge.id, fridge.name),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, size: 19, color: scheme.onSurfaceVariant),
+                      onPressed: () {
+                        if (fridges.length <= 1) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('마지막 1개 냉장고는 삭제할 수 없어요.')),
+                          );
+                          return;
+                        }
+                        final moveTarget = fridges.firstWhere((f) => f.id != fridge.id).id;
+                        state.deleteFridge(fridge.id, moveToFridgeId: moveTarget);
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
           Divider(color: mf.lineSoft, height: 24),
           _label(context, '새 냉장고 추가'),
           Row(

@@ -365,6 +365,18 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 냉장고 표시 순서를 변경한다(드래그 정렬). 순서는 스냅샷으로 영속·동기화된다.
+  void reorderFridges(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= _fridges.length) {
+      return;
+    }
+    final fridge = _fridges.removeAt(oldIndex);
+    final target = newIndex.clamp(0, _fridges.length);
+    _fridges.insert(target, fridge);
+    _touch();
+    notifyListeners();
+  }
+
   void renameFridge(String id, String name) {
     final fridge = _fridges.firstWhere((f) => f.id == id);
     fridge.name = name;
