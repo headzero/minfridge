@@ -45,6 +45,7 @@ class FoodItemSnapshot {
     required this.fridgeId,
     required this.name,
     required this.type,
+    required this.quantity,
     required this.startedAt,
     required this.createdAt,
     required this.updatedAt,
@@ -55,6 +56,7 @@ class FoodItemSnapshot {
   final String fridgeId;
   final String name;
   final FoodType type;
+  final int quantity;
   final DateTime startedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -66,6 +68,7 @@ class FoodItemSnapshot {
       fridgeId: fridgeId,
       name: name,
       type: type,
+      quantity: quantity,
       startedAt: startedAt,
       createdAt: createdAt,
       updatedAt: updatedAt,

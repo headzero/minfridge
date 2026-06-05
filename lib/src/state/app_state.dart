@@ -52,7 +52,10 @@ class AppState extends ChangeNotifier {
       Map<String, DailyRecommendation>.unmodifiable(_recommendations);
 
   double get fridgeGaugeProgress {
-    final count = activeItemsInSelectedFridge.length;
+    final count = activeItemsInSelectedFridge.fold<int>(
+      0,
+      (sum, item) => sum + item.quantity,
+    );
     const capacity = 30.0;
     return (count / capacity).clamp(0.0, 1.0);
   }
@@ -113,6 +116,7 @@ class AppState extends ChangeNotifier {
                 fridgeId: item.fridgeId,
                 name: item.name,
                 type: item.type,
+                quantity: item.quantity,
                 startedAt: item.startedAt,
                 createdAt: item.createdAt,
                 updatedAt: item.updatedAt,
@@ -206,6 +210,7 @@ class AppState extends ChangeNotifier {
   void addItem({
     required String name,
     required FoodType type,
+    required int quantity,
     required DateTime startedAt,
   }) {
     final fridgeId = _selectedFridgeId;
@@ -217,6 +222,7 @@ class AppState extends ChangeNotifier {
       fridgeId: fridgeId,
       name: name,
       type: type,
+      quantity: quantity,
       startedAt: startedAt,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -229,9 +235,11 @@ class AppState extends ChangeNotifier {
   void updateItem(
     FoodItem item, {
     required String name,
+    required int quantity,
     required DateTime startedAt,
   }) {
     item.name = name;
+    item.quantity = quantity;
     item.startedAt = startedAt;
     item.updatedAt = DateTime.now();
     _touch();
@@ -366,11 +374,13 @@ class AppState extends ChangeNotifier {
     addItem(
       name: '계란',
       type: FoodType.ingredient,
+      quantity: 6,
       startedAt: DateTime.now().subtract(const Duration(days: 2)),
     );
     addItem(
       name: '김치',
       type: FoodType.sideDish,
+      quantity: 1,
       startedAt: DateTime.now().subtract(const Duration(days: 8)),
     );
   }

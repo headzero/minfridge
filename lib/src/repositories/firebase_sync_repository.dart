@@ -10,7 +10,7 @@ import 'sync_repository.dart';
 
 class FirebaseSyncRepository implements SyncRepository {
   FirebaseSyncRepository({FirebaseDatabase? database})
-      : _database = database ?? FirebaseDatabase.instance;
+    : _database = database ?? FirebaseDatabase.instance;
 
   final FirebaseDatabase _database;
 
@@ -19,10 +19,9 @@ class FirebaseSyncRepository implements SyncRepository {
   @override
   Future<bool> hasCloudData(String uid) async {
     return _withRetry<bool>(() async {
-      final snapshot =
-          await _userRef(uid).child('meta/localUpdatedAt').get().timeout(
-                const Duration(seconds: 8),
-              );
+      final snapshot = await _userRef(
+        uid,
+      ).child('meta/localUpdatedAt').get().timeout(const Duration(seconds: 8));
       return snapshot.exists;
     }, operation: 'hasCloudData');
   }
@@ -32,12 +31,16 @@ class FirebaseSyncRepository implements SyncRepository {
     return _withRetry<DateTime?>(() async {
       final server = await _userRef(uid).child('meta/serverUpdatedAt').get();
       if (server.value is num) {
-        return DateTime.fromMillisecondsSinceEpoch((server.value as num).toInt());
+        return DateTime.fromMillisecondsSinceEpoch(
+          (server.value as num).toInt(),
+        );
       }
 
       final local = await _userRef(uid).child('meta/localUpdatedAt').get();
       if (local.value is num) {
-        return DateTime.fromMillisecondsSinceEpoch((local.value as num).toInt());
+        return DateTime.fromMillisecondsSinceEpoch(
+          (local.value as num).toInt(),
+        );
       }
       return null;
     }, operation: 'getCloudLastUpdatedAt');
@@ -82,15 +85,17 @@ class FirebaseSyncRepository implements SyncRepository {
         fallback: DateTime.fromMillisecondsSinceEpoch(0),
       );
 
-      final fridges = fridgesMap.values
-          .map((v) => _fridgeFromMap(_asMap(v)))
-          .whereType<FridgeSnapshot>()
-          .toList();
+      final fridges =
+          fridgesMap.values
+              .map((v) => _fridgeFromMap(_asMap(v)))
+              .whereType<FridgeSnapshot>()
+              .toList();
 
-      final items = itemsMap.values
-          .map((v) => _itemFromMap(_asMap(v)))
-          .whereType<FoodItemSnapshot>()
-          .toList();
+      final items =
+          itemsMap.values
+              .map((v) => _itemFromMap(_asMap(v)))
+              .whereType<FoodItemSnapshot>()
+              .toList();
 
       return AppStateSnapshot(
         updatedAt: updatedAt,
@@ -202,6 +207,7 @@ class FirebaseSyncRepository implements SyncRepository {
           'fridgeId': i.fridgeId,
           'name': i.name,
           'type': i.type.name,
+          'quantity': i.quantity,
           'startedAt': i.startedAt.millisecondsSinceEpoch,
           'createdAt': i.createdAt.millisecondsSinceEpoch,
           'updatedAt': i.updatedAt.millisecondsSinceEpoch,
@@ -239,15 +245,17 @@ class FirebaseSyncRepository implements SyncRepository {
       return null;
     }
 
-    final type = typeName == FoodType.sideDish.name
-        ? FoodType.sideDish
-        : FoodType.ingredient;
+    final type =
+        typeName == FoodType.sideDish.name
+            ? FoodType.sideDish
+            : FoodType.ingredient;
 
     return FoodItemSnapshot(
       id: id,
       fridgeId: fridgeId,
       name: name,
       type: type,
+      quantity: _toInt(map['quantity'], fallback: 1),
       startedAt: _toDateTime(map['startedAt']),
       createdAt: _toDateTime(map['createdAt']),
       updatedAt: _toDateTime(map['updatedAt']),
@@ -260,6 +268,13 @@ class FirebaseSyncRepository implements SyncRepository {
       return DateTime.fromMillisecondsSinceEpoch(value.toInt());
     }
     return fallback ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  int _toInt(Object? value, {int fallback = 1}) {
+    if (value is num) {
+      return value.toInt() < 1 ? 1 : value.toInt();
+    }
+    return fallback;
   }
 
   Map<String, dynamic> _asMap(Object? value) {

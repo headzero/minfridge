@@ -31,31 +31,34 @@ class LocalSnapshotRepository {
   Map<String, Object?> _toMap(AppStateSnapshot snapshot) {
     return <String, Object?>{
       'updatedAt': snapshot.updatedAt.millisecondsSinceEpoch,
-      'fridges': snapshot.fridges
-          .map(
-            (f) => <String, Object?>{
-              'id': f.id,
-              'name': f.name,
-              'createdAt': f.createdAt.millisecondsSinceEpoch,
-              'updatedAt': f.updatedAt.millisecondsSinceEpoch,
-              'isDefault': f.isDefault,
-            },
-          )
-          .toList(),
-      'items': snapshot.items
-          .map(
-            (i) => <String, Object?>{
-              'id': i.id,
-              'fridgeId': i.fridgeId,
-              'name': i.name,
-              'type': i.type.name,
-              'startedAt': i.startedAt.millisecondsSinceEpoch,
-              'createdAt': i.createdAt.millisecondsSinceEpoch,
-              'updatedAt': i.updatedAt.millisecondsSinceEpoch,
-              'isActive': i.isActive,
-            },
-          )
-          .toList(),
+      'fridges':
+          snapshot.fridges
+              .map(
+                (f) => <String, Object?>{
+                  'id': f.id,
+                  'name': f.name,
+                  'createdAt': f.createdAt.millisecondsSinceEpoch,
+                  'updatedAt': f.updatedAt.millisecondsSinceEpoch,
+                  'isDefault': f.isDefault,
+                },
+              )
+              .toList(),
+      'items':
+          snapshot.items
+              .map(
+                (i) => <String, Object?>{
+                  'id': i.id,
+                  'fridgeId': i.fridgeId,
+                  'name': i.name,
+                  'type': i.type.name,
+                  'quantity': i.quantity,
+                  'startedAt': i.startedAt.millisecondsSinceEpoch,
+                  'createdAt': i.createdAt.millisecondsSinceEpoch,
+                  'updatedAt': i.updatedAt.millisecondsSinceEpoch,
+                  'isActive': i.isActive,
+                },
+              )
+              .toList(),
     };
   }
 
@@ -104,9 +107,10 @@ class LocalSnapshotRepository {
           continue;
         }
 
-        final type = row['type'] == FoodType.sideDish.name
-            ? FoodType.sideDish
-            : FoodType.ingredient;
+        final type =
+            row['type'] == FoodType.sideDish.name
+                ? FoodType.sideDish
+                : FoodType.ingredient;
 
         items.add(
           FoodItemSnapshot(
@@ -114,6 +118,7 @@ class LocalSnapshotRepository {
             fridgeId: fridgeId,
             name: name,
             type: type,
+            quantity: _toInt(row['quantity'], fallback: 1),
             startedAt: _toDateTime(row['startedAt']),
             createdAt: _toDateTime(row['createdAt']),
             updatedAt: _toDateTime(row['updatedAt']),
@@ -135,5 +140,12 @@ class LocalSnapshotRepository {
       return DateTime.fromMillisecondsSinceEpoch(value.toInt());
     }
     return fallback ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  int _toInt(Object? value, {int fallback = 1}) {
+    if (value is num) {
+      return value.toInt() < 1 ? 1 : value.toInt();
+    }
+    return fallback;
   }
 }

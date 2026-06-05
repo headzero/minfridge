@@ -6,6 +6,7 @@ class FoodItem {
     required this.fridgeId,
     required this.name,
     required this.type,
+    this.quantity = 1,
     required this.startedAt,
     required this.createdAt,
     required this.updatedAt,
@@ -16,6 +17,7 @@ class FoodItem {
   String fridgeId;
   String name;
   FoodType type;
+  int quantity;
   DateTime startedAt;
   DateTime createdAt;
   DateTime updatedAt;

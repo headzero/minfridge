@@ -45,8 +45,14 @@ class _HomeShellState extends State<HomeShell> {
           selectedIndex: _index,
           onDestinationSelected: (value) => setState(() => _index = value),
           destinations: const <NavigationDestination>[
-            NavigationDestination(icon: Icon(Icons.kitchen_outlined), label: '홈'),
-            NavigationDestination(icon: Icon(Icons.restaurant_menu), label: '오늘 추천'),
+            NavigationDestination(
+              icon: Icon(Icons.kitchen_outlined),
+              label: '홈',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.restaurant_menu),
+              label: '오늘 추천',
+            ),
             NavigationDestination(icon: Icon(Icons.history), label: '히스토리'),
             NavigationDestination(icon: Icon(Icons.settings), label: '설정'),
           ],
@@ -63,30 +69,31 @@ class _HomeShellState extends State<HomeShell> {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('오늘 추천 만족도'),
-        content: const Text('오늘 추천이 도움이 되었나요? (선택 입력)'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () {
-              context.read<AppState>().submitFeedbackForToday(false);
-              Navigator.of(context).pop(true);
-            },
-            child: const Text('싫어요'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('오늘 추천 만족도'),
+            content: const Text('오늘 추천이 도움이 되었나요? (선택 입력)'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  context.read<AppState>().submitFeedbackForToday(false);
+                  Navigator.of(context).pop(true);
+                },
+                child: const Text('싫어요'),
+              ),
+              TextButton(
+                onPressed: () {
+                  context.read<AppState>().submitFeedbackForToday(true);
+                  Navigator.of(context).pop(true);
+                },
+                child: const Text('좋아요'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('건너뛰기'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              context.read<AppState>().submitFeedbackForToday(true);
-              Navigator.of(context).pop(true);
-            },
-            child: const Text('좋아요'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('건너뛰기'),
-          ),
-        ],
-      ),
     );
     return result ?? true;
   }
@@ -108,7 +115,10 @@ class _HomePage extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                const Text('하루한칸', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const Text(
+                  '하루한칸',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
                 const Spacer(),
                 IconButton(
                   onPressed: () => _showFridgeManager(context),
@@ -134,16 +144,22 @@ class _HomePage extends StatelessWidget {
                   label: const Text('식재료 추가'),
                 ),
                 OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(builder: (_) => const _TodayPage()),
-                  ),
+                  onPressed:
+                      () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const _TodayPage(),
+                        ),
+                      ),
                   icon: const Icon(Icons.restaurant),
                   label: const Text('오늘 추천 보기'),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            Text('재고 (${items.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              '재고 (${items.fold<int>(0, (sum, item) => sum + item.quantity)})',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             Expanded(
               child: ListView.separated(
@@ -177,7 +193,10 @@ class _TodayPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Text('오늘의 추천', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text(
+              '오늘의 추천',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 4),
             Text('수동 새로고침 남은 횟수: ${state.remainingManualRefresh}회'),
             const SizedBox(height: 12),
@@ -185,12 +204,17 @@ class _TodayPage extends StatelessWidget {
               children: <Widget>[
                 FilledButton.icon(
                   onPressed: () async {
-                    final ok = await context.read<AppState>().manualRefreshToday();
+                    final ok =
+                        await context.read<AppState>().manualRefreshToday();
                     if (!context.mounted) {
                       return;
                     }
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(ok ? '추천을 새로 생성했습니다.' : '재시도 제한에 도달했습니다.')),
+                      SnackBar(
+                        content: Text(
+                          ok ? '추천을 새로 생성했습니다.' : '재시도 제한에 도달했습니다.',
+                        ),
+                      ),
                     );
                   },
                   icon: const Icon(Icons.refresh),
@@ -198,13 +222,18 @@ class _TodayPage extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 OutlinedButton(
-                  onPressed: () => context.read<AppState>().generateTodayRecommendationIfMissing(),
+                  onPressed:
+                      () =>
+                          context
+                              .read<AppState>()
+                              .generateTodayRecommendationIfMissing(),
                   child: const Text('오늘 조회'),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            if (recommendation == null || recommendation.status == RecommendationStatus.failed)
+            if (recommendation == null ||
+                recommendation.status == RecommendationStatus.failed)
               _FailureCard(recommendation: recommendation)
             else
               Expanded(
@@ -229,8 +258,9 @@ class _HistoryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final recs = context.watch<AppState>().recommendationHistory.entries.toList()
-      ..sort((a, b) => b.key.compareTo(a.key));
+    final recs =
+        context.watch<AppState>().recommendationHistory.entries.toList()
+          ..sort((a, b) => b.key.compareTo(a.key));
 
     return SafeArea(
       child: Padding(
@@ -238,7 +268,10 @@ class _HistoryPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Text('추천 히스토리 (1년)', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text(
+              '추천 히스토리 (1년)',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             Expanded(
               child: ListView.builder(
@@ -280,7 +313,10 @@ class _SettingsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Text('설정', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text(
+              '설정',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             const ListTile(
               leading: Icon(Icons.notifications_active_outlined),
@@ -295,33 +331,38 @@ class _SettingsPage extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.login),
                 title: Text(auth.isLoggedIn ? '회원 로그인됨' : '비회원 사용 중'),
-                subtitle: auth.lastError == null ? null : Text('오류: ${auth.lastError}'),
+                subtitle:
+                    auth.lastError == null
+                        ? null
+                        : Text('오류: ${auth.lastError}'),
               ),
               Wrap(
                 spacing: 8,
                 children: <Widget>[
                   FilledButton(
-                    onPressed: auth.isBusy
-                        ? null
-                        : () async {
-                            await auth.signInWithGoogle();
-                            if (!context.mounted) {
-                              return;
-                            }
-                            await _handleMergePrompt(context, auth);
-                          },
+                    onPressed:
+                        auth.isBusy
+                            ? null
+                            : () async {
+                              await auth.signInWithGoogle();
+                              if (!context.mounted) {
+                                return;
+                              }
+                              await _handleMergePrompt(context, auth);
+                            },
                     child: const Text('Google 로그인'),
                   ),
                   OutlinedButton(
-                    onPressed: auth.isBusy
-                        ? null
-                        : () async {
-                            await auth.signInWithApple();
-                            if (!context.mounted) {
-                              return;
-                            }
-                            await _handleMergePrompt(context, auth);
-                          },
+                    onPressed:
+                        auth.isBusy
+                            ? null
+                            : () async {
+                              await auth.signInWithApple();
+                              if (!context.mounted) {
+                                return;
+                              }
+                              await _handleMergePrompt(context, auth);
+                            },
                     child: const Text('Apple 로그인'),
                   ),
                   TextButton(
@@ -331,17 +372,19 @@ class _SettingsPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
-                '병합 정책: 클라우드 데이터 없으면 자동 병합, 있으면 최신 업데이트 기준으로 선택',
-              ),
+              const Text('병합 정책: 클라우드 데이터 없으면 자동 병합, 있으면 최신 업데이트 기준으로 선택'),
             ],
             ListTile(
               leading: const Icon(Icons.thumb_up_alt_outlined),
               title: const Text('최근 7일 좋아요 비율'),
-              subtitle: Text('${(state.recent7DayLikeRatio * 100).toStringAsFixed(1)}%'),
+              subtitle: Text(
+                '${(state.recent7DayLikeRatio * 100).toStringAsFixed(1)}%',
+              ),
             ),
             const Spacer(),
-            const Text('Firebase 연동 가이드는 lib/src/repositories/firebase_guide.md 참고'),
+            const Text(
+              'Firebase 연동 가이드는 lib/src/repositories/firebase_guide.md 참고',
+            ),
           ],
         ),
       ),
@@ -359,28 +402,32 @@ class _SettingsPage extends StatelessWidget {
 
     final choice = await showDialog<MergeChoice>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('데이터 병합 방식 선택'),
-        content: Text(
-          '로컬: ${toDateKey(prompt.localUpdatedAt)}\n'
-          '클라우드: ${toDateKey(prompt.cloudUpdatedAt)}\n\n'
-          '${prompt.isCloudNewer ? '클라우드 데이터가 더 최신입니다.' : '로컬 데이터가 더 최신입니다.'}',
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(MergeChoice.useCloud),
-            child: const Text('클라우드 사용'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('데이터 병합 방식 선택'),
+            content: Text(
+              '로컬: ${toDateKey(prompt.localUpdatedAt)}\n'
+              '클라우드: ${toDateKey(prompt.cloudUpdatedAt)}\n\n'
+              '${prompt.isCloudNewer ? '클라우드 데이터가 더 최신입니다.' : '로컬 데이터가 더 최신입니다.'}',
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed:
+                    () => Navigator.of(context).pop(MergeChoice.useCloud),
+                child: const Text('클라우드 사용'),
+              ),
+              TextButton(
+                onPressed:
+                    () => Navigator.of(context).pop(MergeChoice.keepLocal),
+                child: const Text('로컬 업로드'),
+              ),
+              FilledButton(
+                onPressed:
+                    () => Navigator.of(context).pop(MergeChoice.mergeByLatest),
+                child: const Text('최신 기준 병합'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(MergeChoice.keepLocal),
-            child: const Text('로컬 업로드'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(MergeChoice.mergeByLatest),
-            child: const Text('최신 기준 병합'),
-          ),
-        ],
-      ),
     );
 
     if (choice != null) {
@@ -402,18 +449,19 @@ class _FridgeTabs extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: fridges
-            .map(
-              (f) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(f.name),
-                  selected: selectedFridgeId == f.id,
-                  onSelected: (_) => onSelect(f.id),
-                ),
-              ),
-            )
-            .toList(),
+        children:
+            fridges
+                .map(
+                  (f) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(f.name),
+                      selected: selectedFridgeId == f.id,
+                      onSelected: (_) => onSelect(f.id),
+                    ),
+                  ),
+                )
+                .toList(),
       ),
     );
   }
@@ -464,7 +512,7 @@ class _FoodTile extends StatelessWidget {
       color: _storageColor(item.storageDays),
       child: ListTile(
         title: Text(item.name),
-        subtitle: Text('보관 ${item.storageDays}일'),
+        subtitle: Text('수량 ${item.quantity}개 · 보관 ${item.storageDays}일'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -497,7 +545,10 @@ class _MealSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 8),
             for (final value in values) Text('• $value'),
           ],
@@ -521,7 +572,10 @@ class _FailureCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Text('추천 생성 실패', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              '추천 생성 실패',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             Text('실패 횟수: $failures'),
             const SizedBox(height: 8),
@@ -571,6 +625,9 @@ Color _storageColor(int days) {
 Future<void> _showItemEditor(BuildContext context, {FoodItem? editing}) async {
   final state = context.read<AppState>();
   final nameController = TextEditingController(text: editing?.name ?? '');
+  final quantityController = TextEditingController(
+    text: (editing?.quantity ?? 1).toString(),
+  );
   FoodType type = editing?.type ?? FoodType.ingredient;
   DateTime startedAt = editing?.startedAt ?? DateTime.now();
 
@@ -589,13 +646,28 @@ Future<void> _showItemEditor(BuildContext context, {FoodItem? editing}) async {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(editing == null ? '식재료 추가' : '식재료 수정', style: const TextStyle(fontWeight: FontWeight.bold)),
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: '이름')),
+            Text(
+              editing == null ? '식재료 추가' : '식재료 수정',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: '이름'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: quantityController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: '수량'),
+            ),
             const SizedBox(height: 8),
             DropdownButtonFormField<FoodType>(
               value: type,
               items: const <DropdownMenuItem<FoodType>>[
-                DropdownMenuItem(value: FoodType.ingredient, child: Text('식재료')),
+                DropdownMenuItem(
+                  value: FoodType.ingredient,
+                  child: Text('식재료'),
+                ),
                 DropdownMenuItem(value: FoodType.sideDish, child: Text('반찬')),
               ],
               onChanged: (v) => type = v ?? FoodType.ingredient,
@@ -626,13 +698,28 @@ Future<void> _showItemEditor(BuildContext context, {FoodItem? editing}) async {
             FilledButton(
               onPressed: () {
                 final name = nameController.text.trim();
+                final quantity =
+                    int.tryParse(quantityController.text.trim()) ?? 0;
                 if (name.isEmpty) {
                   return;
                 }
+                if (quantity < 1) {
+                  return;
+                }
                 if (editing == null) {
-                  state.addItem(name: name, type: type, startedAt: startedAt);
+                  state.addItem(
+                    name: name,
+                    type: type,
+                    quantity: quantity,
+                    startedAt: startedAt,
+                  );
                 } else {
-                  state.updateItem(editing, name: name, startedAt: startedAt);
+                  state.updateItem(
+                    editing,
+                    name: name,
+                    quantity: quantity,
+                    startedAt: startedAt,
+                  );
                 }
                 Navigator.of(context).pop();
               },
@@ -645,16 +732,26 @@ Future<void> _showItemEditor(BuildContext context, {FoodItem? editing}) async {
   );
 }
 
-Future<void> _showDeleteReasonDialog(BuildContext context, FoodItem item) async {
+Future<void> _showDeleteReasonDialog(
+  BuildContext context,
+  FoodItem item,
+) async {
   final reason = await showDialog<String>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('삭제 사유 선택'),
-      actions: <Widget>[
-        TextButton(onPressed: () => Navigator.of(context).pop('consumed'), child: const Text('소진')),
-        TextButton(onPressed: () => Navigator.of(context).pop('discarded'), child: const Text('폐기')),
-      ],
-    ),
+    builder:
+        (context) => AlertDialog(
+          title: const Text('삭제 사유 선택'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop('consumed'),
+              child: const Text('소진'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop('discarded'),
+              child: const Text('폐기'),
+            ),
+          ],
+        ),
   );
 
   if (reason != null && context.mounted) {
@@ -677,29 +774,47 @@ Future<void> _showFridgeManager(BuildContext context) async {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const Text('냉장고 관리', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  '냉장고 관리',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 for (final fridge in fridges)
                   ListTile(
                     title: Text(fridge.name),
-                    subtitle: Text(fridge.id == state.selectedFridgeId ? '현재 선택됨' : ''),
+                    subtitle: Text(
+                      fridge.id == state.selectedFridgeId ? '현재 선택됨' : '',
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         IconButton(
                           icon: const Icon(Icons.drive_file_rename_outline),
                           onPressed: () async {
-                            final controller = TextEditingController(text: fridge.name);
+                            final controller = TextEditingController(
+                              text: fridge.name,
+                            );
                             final newName = await showDialog<String>(
                               context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('냉장고 이름 변경'),
-                                content: TextField(controller: controller),
-                                actions: <Widget>[
-                                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
-                                  TextButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('저장')),
-                                ],
-                              ),
+                              builder:
+                                  (context) => AlertDialog(
+                                    title: const Text('냉장고 이름 변경'),
+                                    content: TextField(controller: controller),
+                                    actions: <Widget>[
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('취소'),
+                                      ),
+                                      TextButton(
+                                        onPressed:
+                                            () => Navigator.pop(
+                                              context,
+                                              controller.text.trim(),
+                                            ),
+                                        child: const Text('저장'),
+                                      ),
+                                    ],
+                                  ),
                             );
                             if (newName != null && newName.isNotEmpty) {
                               state.renameFridge(fridge.id, newName);
@@ -712,12 +827,18 @@ Future<void> _showFridgeManager(BuildContext context) async {
                           onPressed: () {
                             if (fridges.length <= 1) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('최소 1개의 냉장고는 유지되어야 합니다.')),
+                                const SnackBar(
+                                  content: Text('최소 1개의 냉장고는 유지되어야 합니다.'),
+                                ),
                               );
                               return;
                             }
-                            final moveTarget = fridges.firstWhere((f) => f.id != fridge.id).id;
-                            state.deleteFridge(fridge.id, moveToFridgeId: moveTarget);
+                            final moveTarget =
+                                fridges.firstWhere((f) => f.id != fridge.id).id;
+                            state.deleteFridge(
+                              fridge.id,
+                              moveToFridgeId: moveTarget,
+                            );
                             setModalState(() {});
                           },
                         ),
