@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/food_item.dart';
 import '../state/app_state.dart';
 import 'sheets.dart';
+import 'shopping_list_page.dart';
 import 'theme/minfridge_colors.dart';
 import 'widgets/common.dart';
 
@@ -64,6 +65,11 @@ class _HomePageState extends State<HomePage> {
         children: <Widget>[
           MfHeader(
             title: '하루한칸',
+            extraActionIcon: Icons.shopping_cart_outlined,
+            extraBadgeCount: state.pendingShoppingCount,
+            onExtraAction: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const ShoppingListPage()),
+            ),
             actionIcon: Icons.tune,
             onAction: () => showFridgeManagerSheet(context),
           ),

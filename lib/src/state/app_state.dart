@@ -6,6 +6,7 @@ import '../models/app_state_snapshot.dart';
 import '../models/food_item.dart';
 import '../models/fridge.dart';
 import '../models/recommendation.dart';
+import '../models/shopping_item.dart';
 import '../repositories/recipe_repository.dart';
 import '../services/date_key.dart';
 import '../services/recommendation_scheduler.dart';
@@ -32,6 +33,7 @@ class AppState extends ChangeNotifier {
       <String, DailyRecommendation>{};
   final Map<String, _RefreshQuota> _quotaByDate = <String, _RefreshQuota>{};
   final Map<String, bool> _feedbackByDate = <String, bool>{};
+  final List<ShoppingItem> _shoppingList = <ShoppingItem>[];
 
   String _uid = 'guest-local-user';
   String? _selectedFridgeId;
@@ -54,6 +56,61 @@ class AppState extends ChangeNotifier {
 
   Map<String, DailyRecommendation> get recommendationHistory =>
       Map<String, DailyRecommendation>.unmodifiable(_recommendations);
+
+  UnmodifiableListView<ShoppingItem> get shoppingList =>
+      UnmodifiableListView(_shoppingList);
+
+  /// 아직 담지 않은(미체크) 장보기 항목 수.
+  int get pendingShoppingCount => _shoppingList.where((e) => !e.checked).length;
+
+  /// 장보기 항목 추가. 같은 이름이 이미 있으면 중복 추가 대신 체크를 해제해 되살린다.
+  void addShoppingItem(String name, {ShoppingSource source = ShoppingSource.manual}) {
+    if (_addShoppingItemInternal(name, source)) {
+      notifyListeners();
+    }
+  }
+
+  bool _addShoppingItemInternal(String name, ShoppingSource source) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      return false;
+    }
+    final lower = trimmed.toLowerCase();
+    for (final existing in _shoppingList) {
+      if (existing.name.trim().toLowerCase() == lower) {
+        // 이미 있으면 체크만 풀어 다시 '살 것'으로 되살린다.
+        if (existing.checked) {
+          existing.checked = false;
+          return true;
+        }
+        return false;
+      }
+    }
+    _shoppingList.add(
+      ShoppingItem(
+        id: _id('shop'),
+        name: trimmed,
+        createdAt: DateTime.now(),
+        source: source,
+      ),
+    );
+    return true;
+  }
+
+  void toggleShoppingItem(ShoppingItem item) {
+    item.checked = !item.checked;
+    notifyListeners();
+  }
+
+  void removeShoppingItem(ShoppingItem item) {
+    _shoppingList.removeWhere((e) => e.id == item.id);
+    notifyListeners();
+  }
+
+  void clearCheckedShoppingItems() {
+    _shoppingList.removeWhere((e) => e.checked);
+    notifyListeners();
+  }
 
   /// 선택된 냉장고에서 유통기한이 [withinDays]일 이내(만료 포함)로 임박한 활성 항목.
   List<FoodItem> expiringSoonInSelectedFridge({int withinDays = 3}) {
@@ -223,6 +280,7 @@ class AppState extends ChangeNotifier {
       'recommendations': recommendations,
       'quota': quota,
       'feedback': feedback,
+      'shopping': _shoppingList.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -249,6 +307,19 @@ class AppState extends ChangeNotifier {
         _feedbackByDate[key] = value;
       }
     });
+    final shopping = data['shopping'];
+    if (shopping is List) {
+      _shoppingList.clear();
+      for (final entry in shopping) {
+        if (entry is Map) {
+          _shoppingList.add(
+            ShoppingItem.fromJson(
+              entry.map((k, v) => MapEntry(k.toString(), v)),
+            ),
+          );
+        }
+      }
+    }
     notifyListeners();
   }
 
@@ -425,6 +496,10 @@ class AppState extends ChangeNotifier {
   void deleteItem(FoodItem item, {required String reason}) {
     item.isActive = false;
     item.updatedAt = DateTime.now();
+    // 다 먹어서 소진한 재료는 다시 살 가능성이 높아 장보기 후보로 제안한다.
+    if (reason == 'consumed') {
+      _addShoppingItemInternal(item.name, ShoppingSource.consumed);
+    }
     _touch();
     notifyListeners();
   }

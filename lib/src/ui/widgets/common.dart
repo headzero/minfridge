@@ -40,13 +40,24 @@ String itemSubLine(FoodItem item) {
   return parts.join(' · ');
 }
 
-/// 화면 상단 헤더 (제목 + 우측 액션 버튼).
+/// 화면 상단 헤더 (제목 + 우측 액션 버튼 1~2개).
 class MfHeader extends StatelessWidget {
-  const MfHeader({super.key, required this.title, this.actionIcon, this.onAction});
+  const MfHeader({
+    super.key,
+    required this.title,
+    this.actionIcon,
+    this.onAction,
+    this.extraActionIcon,
+    this.onExtraAction,
+    this.extraBadgeCount = 0,
+  });
 
   final String title;
   final IconData? actionIcon;
   final VoidCallback? onAction;
+  final IconData? extraActionIcon;
+  final VoidCallback? onExtraAction;
+  final int extraBadgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -65,19 +76,65 @@ class MfHeader extends StatelessWidget {
             ),
           ),
           const Spacer(),
+          if (extraActionIcon != null) ...<Widget>[
+            _HeaderIconButton(
+              icon: extraActionIcon!,
+              onTap: onExtraAction,
+              badgeCount: extraBadgeCount,
+            ),
+            const SizedBox(width: 8),
+          ],
           if (actionIcon != null)
-            InkResponse(
-              onTap: onAction,
-              radius: 26,
+            _HeaderIconButton(icon: actionIcon!, onTap: onAction),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({required this.icon, this.onTap, this.badgeCount = 0});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+  final int badgeCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkResponse(
+      onTap: onTap,
+      radius: 26,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: <Widget>[
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: scheme.outlineVariant),
+            ),
+            child: Icon(icon, size: 21, color: scheme.onSurfaceVariant),
+          ),
+          if (badgeCount > 0)
+            Positioned(
+              top: -4,
+              right: -4,
               child: Container(
-                width: 40,
-                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                constraints: const BoxConstraints(minWidth: 18),
                 decoration: BoxDecoration(
-                  color: scheme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: scheme.outlineVariant),
+                  color: scheme.primary,
+                  borderRadius: BorderRadius.circular(9),
+                  border: Border.all(color: scheme.surface, width: 1.5),
                 ),
-                child: Icon(actionIcon, size: 21, color: scheme.onSurfaceVariant),
+                child: Text(
+                  badgeCount > 99 ? '99+' : '$badgeCount',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: scheme.onPrimary),
+                ),
               ),
             ),
         ],
