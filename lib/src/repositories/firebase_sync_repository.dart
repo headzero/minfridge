@@ -209,6 +209,8 @@ class FirebaseSyncRepository implements SyncRepository {
           'type': i.type.name,
           'quantity': i.quantity,
           'startedAt': i.startedAt.millisecondsSinceEpoch,
+          'expiresAt': i.expiresAt?.millisecondsSinceEpoch,
+          'expirySource': i.expirySource?.name,
           'createdAt': i.createdAt.millisecondsSinceEpoch,
           'updatedAt': i.updatedAt.millisecondsSinceEpoch,
           'isActive': i.isActive,
@@ -257,6 +259,8 @@ class FirebaseSyncRepository implements SyncRepository {
       type: type,
       quantity: _toInt(map['quantity'], fallback: 1),
       startedAt: _toDateTime(map['startedAt']),
+      expiresAt: _toNullableDateTime(map['expiresAt']),
+      expirySource: _toExpirySource(map['expirySource']),
       createdAt: _toDateTime(map['createdAt']),
       updatedAt: _toDateTime(map['updatedAt']),
       isActive: map['isActive'] != false,
@@ -268,6 +272,23 @@ class FirebaseSyncRepository implements SyncRepository {
       return DateTime.fromMillisecondsSinceEpoch(value.toInt());
     }
     return fallback ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  DateTime? _toNullableDateTime(Object? value) {
+    if (value is num) {
+      return DateTime.fromMillisecondsSinceEpoch(value.toInt());
+    }
+    return null;
+  }
+
+  ExpirySource? _toExpirySource(Object? value) {
+    if (value == ExpirySource.manual.name) {
+      return ExpirySource.manual;
+    }
+    if (value == ExpirySource.estimated.name) {
+      return ExpirySource.estimated;
+    }
+    return null;
   }
 
   int _toInt(Object? value, {int fallback = 1}) {

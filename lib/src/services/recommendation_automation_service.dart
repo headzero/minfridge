@@ -85,14 +85,21 @@ class RecommendationAutomationService {
     _morningTimer = Timer(delay, () async {
       try {
         await _appState.generateTodayRecommendationIfMissing();
+        final expiringSoon = _appState.expiringSoonCount();
         final rec = _appState.todayRecommendation;
         if (rec != null && rec.status == RecommendationStatus.success) {
-          await _notificationService.showDailyRecommendationReady();
+          await _notificationService.showDailyRecommendationReady(
+            expiringSoon: expiringSoon,
+          );
         } else {
-          await _notificationService.showDailyRecommendationFailed();
+          await _notificationService.showDailyRecommendationFailed(
+            expiringSoon: expiringSoon,
+          );
         }
       } catch (_) {
-        await _notificationService.showDailyRecommendationFailed();
+        await _notificationService.showDailyRecommendationFailed(
+          expiringSoon: _appState.expiringSoonCount(),
+        );
       }
       _scheduleMorningNotification();
     });

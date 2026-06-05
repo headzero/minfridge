@@ -47,6 +47,8 @@ class FoodItemSnapshot {
     required this.type,
     required this.quantity,
     required this.startedAt,
+    this.expiresAt,
+    this.expirySource,
     required this.createdAt,
     required this.updatedAt,
     required this.isActive,
@@ -58,6 +60,8 @@ class FoodItemSnapshot {
   final FoodType type;
   final int quantity;
   final DateTime startedAt;
+  final DateTime? expiresAt;
+  final ExpirySource? expirySource;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isActive;
@@ -70,6 +74,8 @@ class FoodItemSnapshot {
       type: type,
       quantity: quantity,
       startedAt: startedAt,
+      expiresAt: expiresAt,
+      expirySource: expirySource,
       createdAt: createdAt,
       updatedAt: updatedAt,
       isActive: isActive,

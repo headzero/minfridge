@@ -42,11 +42,15 @@ class LocalNotificationService {
         ?.createNotificationChannel(channel);
   }
 
-  Future<void> showDailyRecommendationReady() async {
+  Future<void> showDailyRecommendationReady({int expiringSoon = 0}) async {
+    final body = StringBuffer('아침/점심/저녁 추천 9개를 확인해보세요.');
+    if (expiringSoon > 0) {
+      body.write(' 유통기한 임박 재료 $expiringSoon개도 챙겨보세요.');
+    }
     await _plugin.show(
       7001,
       '오늘의 추천이 준비됐어요',
-      '아침/점심/저녁 추천 9개를 확인해보세요.',
+      body.toString(),
       const NotificationDetails(
         android: AndroidNotificationDetails(
           _channelId,
@@ -60,11 +64,15 @@ class LocalNotificationService {
     );
   }
 
-  Future<void> showDailyRecommendationFailed() async {
+  Future<void> showDailyRecommendationFailed({int expiringSoon = 0}) async {
+    final body = StringBuffer('앱에서 새로고침으로 다시 시도해 주세요.');
+    if (expiringSoon > 0) {
+      body.write(' 유통기한 임박 재료 $expiringSoon개를 먼저 확인해보세요.');
+    }
     await _plugin.show(
       7002,
       '오늘의 추천 생성이 지연됐어요',
-      '앱에서 새로고침으로 다시 시도해 주세요.',
+      body.toString(),
       const NotificationDetails(
         android: AndroidNotificationDetails(
           _channelId,

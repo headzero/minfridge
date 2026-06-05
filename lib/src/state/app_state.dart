@@ -9,18 +9,22 @@ import '../models/recommendation.dart';
 import '../repositories/recipe_repository.dart';
 import '../services/date_key.dart';
 import '../services/recommendation_scheduler.dart';
+import '../services/shelf_life_estimator.dart';
 
 class AppState extends ChangeNotifier {
   AppState({
     required RecipeRepository recipeRepository,
     required RecommendationScheduler scheduler,
+    ShelfLifeEstimator estimator = const ShelfLifeEstimator(),
   }) : _recipeRepository = recipeRepository,
-       _scheduler = scheduler {
+       _scheduler = scheduler,
+       _estimator = estimator {
     _seedInitialData();
   }
 
   final RecipeRepository _recipeRepository;
   final RecommendationScheduler _scheduler;
+  final ShelfLifeEstimator _estimator;
 
   final List<Fridge> _fridges = <Fridge>[];
   final Map<String, List<FoodItem>> _itemsByFridge = <String, List<FoodItem>>{};
@@ -50,6 +54,51 @@ class AppState extends ChangeNotifier {
 
   Map<String, DailyRecommendation> get recommendationHistory =>
       Map<String, DailyRecommendation>.unmodifiable(_recommendations);
+
+  /// 선택된 냉장고에서 유통기한이 [withinDays]일 이내(만료 포함)로 임박한 활성 항목.
+  List<FoodItem> expiringSoonInSelectedFridge({int withinDays = 3}) {
+    return activeItemsInSelectedFridge.where((item) {
+      final days = item.daysUntilExpiry;
+      return days != null && days <= withinDays;
+    }).toList();
+  }
+
+  /// 모든 냉장고에서 유통기한이 임박한 활성 항목 수(알림 요약용).
+  int expiringSoonCount({int withinDays = 3}) {
+    var count = 0;
+    for (final list in _itemsByFridge.values) {
+      for (final item in list) {
+        if (!item.isActive) {
+          continue;
+        }
+        final days = item.daysUntilExpiry;
+        if (days != null && days <= withinDays) {
+          count += 1;
+        }
+      }
+    }
+    return count;
+  }
+
+  /// 추천 생성 입력. 유통기한 임박 항목을 앞쪽에 배치해 우선 활용을 유도한다.
+  List<FoodItem> get _recommendationItems {
+    final items = activeItemsInSelectedFridge;
+    items.sort((a, b) {
+      final ad = a.daysUntilExpiry ?? 1 << 30;
+      final bd = b.daysUntilExpiry ?? 1 << 30;
+      return ad.compareTo(bd);
+    });
+    return items;
+  }
+
+  /// UI에서 입력값 보정용 예상 유통기한 미리보기를 제공한다.
+  DateTime estimateExpiry({
+    required String name,
+    required FoodType type,
+    required DateTime startedAt,
+  }) {
+    return _estimator.estimate(name: name, type: type, startedAt: startedAt);
+  }
 
   double get fridgeGaugeProgress {
     final count = activeItemsInSelectedFridge.fold<int>(
@@ -118,6 +167,8 @@ class AppState extends ChangeNotifier {
                 type: item.type,
                 quantity: item.quantity,
                 startedAt: item.startedAt,
+                expiresAt: item.expiresAt,
+                expirySource: item.expirySource,
                 createdAt: item.createdAt,
                 updatedAt: item.updatedAt,
                 isActive: item.isActive,
@@ -212,11 +263,18 @@ class AppState extends ChangeNotifier {
     required FoodType type,
     required int quantity,
     required DateTime startedAt,
+    DateTime? expiresAt,
   }) {
     final fridgeId = _selectedFridgeId;
     if (fridgeId == null) {
       return;
     }
+    final resolved = _resolveExpiry(
+      name: name,
+      type: type,
+      startedAt: startedAt,
+      expiresAt: expiresAt,
+    );
     final item = FoodItem(
       id: _id('item'),
       fridgeId: fridgeId,
@@ -224,6 +282,8 @@ class AppState extends ChangeNotifier {
       type: type,
       quantity: quantity,
       startedAt: startedAt,
+      expiresAt: resolved.value,
+      expirySource: resolved.source,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -237,13 +297,42 @@ class AppState extends ChangeNotifier {
     required String name,
     required int quantity,
     required DateTime startedAt,
+    DateTime? expiresAt,
   }) {
+    final resolved = _resolveExpiry(
+      name: name,
+      startedAt: startedAt,
+      expiresAt: expiresAt,
+      currentType: item.type,
+    );
     item.name = name;
     item.quantity = quantity;
     item.startedAt = startedAt;
+    item.expiresAt = resolved.value;
+    item.expirySource = resolved.source;
     item.updatedAt = DateTime.now();
     _touch();
     notifyListeners();
+  }
+
+  /// 유통기한이 명시되면 manual, 비어 있으면 이름/유형 기반 estimated 값으로 채운다.
+  _ResolvedExpiry _resolveExpiry({
+    required String name,
+    FoodType? type,
+    required DateTime startedAt,
+    required DateTime? expiresAt,
+    FoodType? currentType,
+  }) {
+    if (expiresAt != null) {
+      return _ResolvedExpiry(expiresAt, ExpirySource.manual);
+    }
+    final resolvedType = type ?? currentType ?? FoodType.ingredient;
+    final estimated = _estimator.estimate(
+      name: name,
+      type: resolvedType,
+      startedAt: startedAt,
+    );
+    return _ResolvedExpiry(estimated, ExpirySource.estimated);
   }
 
   void deleteItem(FoodItem item, {required String reason}) {
@@ -262,7 +351,7 @@ class AppState extends ChangeNotifier {
 
     final rec = await _recipeRepository.generateForDay(
       dateKey: key,
-      activeItems: activeItemsInSelectedFridge,
+      activeItems: _recommendationItems,
       forceHighQualityModel: _shouldUseHighQualityModel(),
     );
 
@@ -393,6 +482,13 @@ class AppState extends ChangeNotifier {
     final now = DateTime.now().microsecondsSinceEpoch;
     return '$prefix-$now';
   }
+}
+
+class _ResolvedExpiry {
+  _ResolvedExpiry(this.value, this.source);
+
+  final DateTime value;
+  final ExpirySource source;
 }
 
 class _RefreshQuota {

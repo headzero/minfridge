@@ -508,11 +508,20 @@ class _FoodTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final daysUntilExpiry = item.daysUntilExpiry;
+    final cardColor =
+        daysUntilExpiry != null
+            ? _expiryColor(daysUntilExpiry)
+            : _storageColor(item.storageDays);
+
     return Card(
-      color: _storageColor(item.storageDays),
+      color: cardColor,
       child: ListTile(
         title: Text(item.name),
-        subtitle: Text('수량 ${item.quantity}개 · 보관 ${item.storageDays}일'),
+        subtitle: Text(
+          '수량 ${item.quantity}개 · 보관 ${item.storageDays}일'
+          '${daysUntilExpiry == null ? '' : ' · 유통기한 ${_expiryLabel(daysUntilExpiry)}${item.isExpiryEstimated ? ' (예상)' : ''}'}',
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -606,6 +615,29 @@ class _AdBannerPlaceholder extends StatelessWidget {
   }
 }
 
+String _expiryLabel(int daysUntilExpiry) {
+  if (daysUntilExpiry < 0) {
+    return '지남';
+  }
+  if (daysUntilExpiry == 0) {
+    return 'D-day';
+  }
+  return 'D-$daysUntilExpiry';
+}
+
+Color _expiryColor(int daysUntilExpiry) {
+  if (daysUntilExpiry <= 1) {
+    return const Color(0xFFFFCDD2);
+  }
+  if (daysUntilExpiry <= 3) {
+    return const Color(0xFFFFE0B2);
+  }
+  if (daysUntilExpiry <= 7) {
+    return const Color(0xFFFFFDE7);
+  }
+  return const Color(0xFFE8F5E9);
+}
+
 Color _storageColor(int days) {
   if (days <= 3) {
     return const Color(0xFFE8F5E9);
@@ -630,103 +662,158 @@ Future<void> _showItemEditor(BuildContext context, {FoodItem? editing}) async {
   );
   FoodType type = editing?.type ?? FoodType.ingredient;
   DateTime startedAt = editing?.startedAt ?? DateTime.now();
+  // null이면 자동 추정값을 사용한다. 직접 입력 항목만 초기값을 유지한다.
+  DateTime? manualExpiry =
+      editing?.expirySource == ExpirySource.manual ? editing?.expiresAt : null;
 
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     builder: (context) {
-      return Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              editing == null ? '식재료 추가' : '식재료 수정',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          final previewName = nameController.text.trim();
+          final effectiveExpiry =
+              manualExpiry ??
+              state.estimateExpiry(
+                name: previewName,
+                type: type,
+                startedAt: startedAt,
+              );
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
             ),
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: '이름'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: quantityController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: '수량'),
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<FoodType>(
-              value: type,
-              items: const <DropdownMenuItem<FoodType>>[
-                DropdownMenuItem(
-                  value: FoodType.ingredient,
-                  child: Text('식재료'),
-                ),
-                DropdownMenuItem(value: FoodType.sideDish, child: Text('반찬')),
-              ],
-              onChanged: (v) => type = v ?? FoodType.ingredient,
-              decoration: const InputDecoration(labelText: '유형'),
-            ),
-            const SizedBox(height: 8),
-            Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text('보관 시작일: ${toDateKey(startedAt)}'),
-                const Spacer(),
-                TextButton(
-                  onPressed: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now(),
-                      initialDate: startedAt,
-                    );
-                    if (picked != null) {
-                      startedAt = picked;
+                Text(
+                  editing == null ? '식재료 추가' : '식재료 수정',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: '이름'),
+                  onChanged: (_) => setModalState(() {}),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: quantityController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: '수량'),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<FoodType>(
+                  value: type,
+                  items: const <DropdownMenuItem<FoodType>>[
+                    DropdownMenuItem(
+                      value: FoodType.ingredient,
+                      child: Text('식재료'),
+                    ),
+                    DropdownMenuItem(
+                      value: FoodType.sideDish,
+                      child: Text('반찬'),
+                    ),
+                  ],
+                  onChanged:
+                      (v) => setModalState(
+                        () => type = v ?? FoodType.ingredient,
+                      ),
+                  decoration: const InputDecoration(labelText: '유형'),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: <Widget>[
+                    Text('보관 시작일: ${toDateKey(startedAt)}'),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now(),
+                          initialDate: startedAt,
+                        );
+                        if (picked != null) {
+                          setModalState(() => startedAt = picked);
+                        }
+                      },
+                      child: const Text('날짜 선택'),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        '유통기한: ${toDateKey(effectiveExpiry)}'
+                        ' ${manualExpiry == null ? '(예상·선택)' : '(직접 입력)'}',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                          initialDate: effectiveExpiry,
+                        );
+                        if (picked != null) {
+                          setModalState(() => manualExpiry = picked);
+                        }
+                      },
+                      child: const Text('날짜 선택'),
+                    ),
+                    if (manualExpiry != null)
+                      TextButton(
+                        onPressed:
+                            () => setModalState(() => manualExpiry = null),
+                        child: const Text('예상값'),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    final quantity =
+                        int.tryParse(quantityController.text.trim()) ?? 0;
+                    if (name.isEmpty) {
+                      return;
                     }
+                    if (quantity < 1) {
+                      return;
+                    }
+                    if (editing == null) {
+                      state.addItem(
+                        name: name,
+                        type: type,
+                        quantity: quantity,
+                        startedAt: startedAt,
+                        expiresAt: manualExpiry,
+                      );
+                    } else {
+                      state.updateItem(
+                        editing,
+                        name: name,
+                        quantity: quantity,
+                        startedAt: startedAt,
+                        expiresAt: manualExpiry,
+                      );
+                    }
+                    Navigator.of(context).pop();
                   },
-                  child: const Text('날짜 선택'),
+                  child: const Text('저장'),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () {
-                final name = nameController.text.trim();
-                final quantity =
-                    int.tryParse(quantityController.text.trim()) ?? 0;
-                if (name.isEmpty) {
-                  return;
-                }
-                if (quantity < 1) {
-                  return;
-                }
-                if (editing == null) {
-                  state.addItem(
-                    name: name,
-                    type: type,
-                    quantity: quantity,
-                    startedAt: startedAt,
-                  );
-                } else {
-                  state.updateItem(
-                    editing,
-                    name: name,
-                    quantity: quantity,
-                    startedAt: startedAt,
-                  );
-                }
-                Navigator.of(context).pop();
-              },
-              child: const Text('저장'),
-            ),
-          ],
-        ),
+          );
+        },
       );
     },
   );

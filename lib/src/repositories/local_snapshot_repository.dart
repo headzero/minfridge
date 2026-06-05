@@ -53,6 +53,8 @@ class LocalSnapshotRepository {
                   'type': i.type.name,
                   'quantity': i.quantity,
                   'startedAt': i.startedAt.millisecondsSinceEpoch,
+                  'expiresAt': i.expiresAt?.millisecondsSinceEpoch,
+                  'expirySource': i.expirySource?.name,
                   'createdAt': i.createdAt.millisecondsSinceEpoch,
                   'updatedAt': i.updatedAt.millisecondsSinceEpoch,
                   'isActive': i.isActive,
@@ -120,6 +122,8 @@ class LocalSnapshotRepository {
             type: type,
             quantity: _toInt(row['quantity'], fallback: 1),
             startedAt: _toDateTime(row['startedAt']),
+            expiresAt: _toNullableDateTime(row['expiresAt']),
+            expirySource: _toExpirySource(row['expirySource']),
             createdAt: _toDateTime(row['createdAt']),
             updatedAt: _toDateTime(row['updatedAt']),
             isActive: row['isActive'] != false,
@@ -147,5 +151,22 @@ class LocalSnapshotRepository {
       return value.toInt() < 1 ? 1 : value.toInt();
     }
     return fallback;
+  }
+
+  DateTime? _toNullableDateTime(Object? value) {
+    if (value is num) {
+      return DateTime.fromMillisecondsSinceEpoch(value.toInt());
+    }
+    return null;
+  }
+
+  ExpirySource? _toExpirySource(Object? value) {
+    if (value == ExpirySource.manual.name) {
+      return ExpirySource.manual;
+    }
+    if (value == ExpirySource.estimated.name) {
+      return ExpirySource.estimated;
+    }
+    return null;
   }
 }
