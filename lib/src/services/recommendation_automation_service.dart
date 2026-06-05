@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import '../models/recommendation.dart';
 import '../state/app_state.dart';
 import 'local_notification_service.dart';
 import 'recommendation_scheduler.dart';
@@ -19,7 +18,6 @@ class RecommendationAutomationService {
   final LocalNotificationService _notificationService;
 
   Timer? _pregenTimer;
-  Timer? _morningTimer;
   String _lastUid = '';
 
   Future<void> start() async {
@@ -27,13 +25,17 @@ class RecommendationAutomationService {
     _appState.addListener(_onAppStateChanged);
     await _runCatchUpIfNeeded();
     _scheduleNextPregen();
-    _scheduleMorningNotification();
+    // 오전 7시 추천 리마인더를 OS 레벨로 예약(앱 종료 상태에서도 발송).
+    try {
+      await _notificationService.scheduleDailyReminder(hour: 7);
+    } catch (_) {
+      // 예약 실패가 앱 구동을 막지 않는다.
+    }
   }
 
   void dispose() {
     _appState.removeListener(_onAppStateChanged);
     _pregenTimer?.cancel();
-    _morningTimer?.cancel();
   }
 
   void _onAppStateChanged() {
@@ -73,35 +75,6 @@ class RecommendationAutomationService {
         // Ignore and keep next schedule alive.
       }
       _scheduleNextPregen();
-    });
-  }
-
-  void _scheduleMorningNotification() {
-    _morningTimer?.cancel();
-    final now = DateTime.now();
-    final next = _scheduler.nextMorningNotification(now);
-    final delay = next.difference(now);
-
-    _morningTimer = Timer(delay, () async {
-      try {
-        await _appState.generateTodayRecommendationIfMissing();
-        final expiringSoon = _appState.expiringSoonCount();
-        final rec = _appState.todayRecommendation;
-        if (rec != null && rec.status == RecommendationStatus.success) {
-          await _notificationService.showDailyRecommendationReady(
-            expiringSoon: expiringSoon,
-          );
-        } else {
-          await _notificationService.showDailyRecommendationFailed(
-            expiringSoon: expiringSoon,
-          );
-        }
-      } catch (_) {
-        await _notificationService.showDailyRecommendationFailed(
-          expiringSoon: _appState.expiringSoonCount(),
-        );
-      }
-      _scheduleMorningNotification();
     });
   }
 }
